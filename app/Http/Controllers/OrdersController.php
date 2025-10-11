@@ -43,7 +43,6 @@ class OrdersController extends Controller
      */
     public function show(string $id) 
     {
-    
         //
         $orders = Orders::select('orders.*')
         ->where('orders.id', '=', $id)
