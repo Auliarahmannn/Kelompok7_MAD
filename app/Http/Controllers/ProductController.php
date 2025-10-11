@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\BaseResource;
+use App\Models\Products;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -11,7 +13,16 @@ class ProductController extends Controller
      */
     public function index()
     {
-        //
+        $products = Products::select(
+            'products.id',
+            'products.nama_produk',
+            'products.deskripsi',
+            'products.harga',
+            'products.stok',
+            'products.foto',
+        )->get();
+
+        return new BaseResource(true, 'List Data products', $products);
     }
 
     /**
