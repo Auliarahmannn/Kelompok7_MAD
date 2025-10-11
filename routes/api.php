@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CustomersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrdersController;
@@ -19,3 +20,6 @@ Route::get('/products', [ProductController::class, 'index']);
 
 // paymen method
 Route::get('/payment_method', [PaymentMethodController::class, 'index']);
+
+// Customers
+Route::get('/customers', [CustomersController::class, 'index']);
