@@ -9,6 +9,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// products
 Route::get('/products', [ProductController::class, 'index']);
-//paymen method
+
+// paymen method
 Route::get('/payment_method', [PaymentMethodController::class, 'index']);
