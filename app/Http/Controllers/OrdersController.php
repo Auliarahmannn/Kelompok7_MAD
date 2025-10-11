@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Orders;
+use App\Http\Resources\BaseResource;
 
-class ProductController extends Controller
+class OrdersController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -12,6 +14,10 @@ class ProductController extends Controller
     public function index()
     {
         //
+        $orders = Orders::join('customers', 'customers.id', '=', 'orders.customer_id')
+            ->select('orders.*', 'customers.name as nama-customer')
+            ->get();
+        return new BaseResource(true, 'List Data Orders', $orders);
     }
 
     /**
