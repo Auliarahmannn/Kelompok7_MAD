@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\OrderItemsController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProductController;
 
 Route::get('/user', function (Request $request) {
@@ -23,7 +24,11 @@ Route::get('/order-items', [OrderItemsController::class, 'index']);
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{id}', [ProductController::class, 'show']);
 
-// paymen method
+// payments 
+Route::get('/payments', [PaymentsController::class, 'index']);
+Route::get('/payments/{id}', [PaymentsController::class, 'show']);
+
+// payment method
 Route::get('/payment_method', [PaymentMethodController::class, 'index']);
 
 // Customers
