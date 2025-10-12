@@ -3,26 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\BaseResource;
-use App\Models\Products;
+use App\Models\Payments;
 use Illuminate\Http\Request;
 
-class ProductController extends Controller
+class PaymentsController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $products = Products::select(
-            'products.id',
-            'products.nama_produk',
-            'products.deskripsi',
-            'products.harga',
-            'products.stok',
-            'products.foto',
+        $payments = Payments::select(
+            'payments.id',
+            'payments.order_id',
+            'payments.payment_method_id',
+            'payments.jumlah_bayar',
+            'payments.tanggal_bayar',
+            'payments.status',
         )->get();
 
-        return new BaseResource(true, 'List Data products', $products);
+        return new BaseResource(true, 'List Data payments', $payments);
     }
 
     /**
@@ -46,18 +46,18 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $products = Products::select(
-            'products.id',
-            'products.nama_produk',
-            'products.deskripsi',
-            'products.harga',
-            'products.stok',
-            'products.foto',
+        $payments = Payments::select(
+            'payments.id',
+            'payments.order_id',
+            'payments.payment_method_id',
+            'payments.jumlah_bayar',
+            'payments.tanggal_bayar',
+            'payments.status',
         )
-            ->where('products.id', '=', $id)
+            ->where('payments.id', "=", $id)
             ->get();
 
-        return new BaseResource(true, 'List Data products', $products);
+        return new BaseResource(true, 'List Data payments', $payments);
     }
 
     /**
