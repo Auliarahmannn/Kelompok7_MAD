@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BaseResource;
 use App\Models\PaymentMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentMethodController extends Controller
 {
@@ -24,6 +25,7 @@ class PaymentMethodController extends Controller
     public function create()
     {
         //
+
     }
 
     /**
@@ -32,6 +34,19 @@ class PaymentMethodController extends Controller
     public function store(Request $request)
     {
         //
+         $validator = Validator::make($request->all(), [
+            'metode' => 'required',
+            'deskripsi' => 'required',
+        ]);
+        if($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+        $paymentmethod = PaymentMethod::create([
+            'metode' => $request->metode,
+            'deskripsi' => $request->deskripsi,
+        ]);
+
+        return new BaseResource(true, 'Berhasil Menambahkan Data Payment Method', $paymentmethod);
     }
 
     /**
@@ -56,6 +71,26 @@ class PaymentMethodController extends Controller
     public function update(Request $request, string $id)
     {
         //
+         $validator = Validator::make($request->all(), [
+            'metode' => 'required',
+            'deskripsi' => 'required',
+        ]);
+        if($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $PaymentMethod = PaymentMethod::findOrFail($id);
+
+        if (!$PaymentMethod) {
+            return new BaseResource(false, 'Metode Tidak ditemukan', null);
+        }
+
+        $PaymentMethod->update([
+            'metode' => $request->metode,
+            'deskripsi' => $request->deskripsi,
+        ]);
+        return new BaseResource(true, 'Pembayaran Berhasil', $PaymentMethod);
+
     }
 
     /**
@@ -64,5 +99,10 @@ class PaymentMethodController extends Controller
     public function destroy(string $id)
     {
         //
+        $paymentmethod = PaymentMethod::find($id);
+        $paymentmethod->payments()->delete();
+        $paymentmethod->delete();
+
+        return new BaseResource(true, 'Data Payment Method Berhasil dihapus', $paymentmethod);
     }
 }
