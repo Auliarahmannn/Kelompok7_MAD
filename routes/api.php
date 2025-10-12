@@ -16,6 +16,7 @@ Route::get('/orders/{id}', [OrdersController::class, 'show']);
 
 // products
 Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 
 // paymen method
 Route::get('/payment_method', [PaymentMethodController::class, 'index']);

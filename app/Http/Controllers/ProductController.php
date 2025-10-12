@@ -46,7 +46,18 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $products = Products::select(
+            'products.id',
+            'products.nama_produk',
+            'products.deskripsi',
+            'products.harga',
+            'products.stok',
+            'products.foto',
+        )
+        ->where('products.id', '=', $id)
+        ->get();
+
+        return new BaseResource(true, 'List Data products', $products);
     }
 
     /**
