@@ -13,11 +13,6 @@ class CustomersController extends Controller
      */
     public function index()
     {
-        //
-        // $orders = Orders::join('customers', 'customers.id', '=', 'orders.customer_id')
-        //     ->select('orders.*', 'customers.name as nama-customer')
-        //     ->get();
-        // return new BaseResource(true, 'List Data Orders', $orders);
         $orders = Customers::all();
         return new BaseResource(true, 'List Data Customers', $orders);
     }

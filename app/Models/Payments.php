@@ -16,4 +16,14 @@ class Payments extends Model
     ];
 
     public $timestamps = false;
+
+    public function order()
+    {
+        return $this->belongsTo(Orders::class, 'order_id');
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class, 'payment_method_id');
+    }
 }

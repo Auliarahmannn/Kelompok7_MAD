@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BaseResource;
 use App\Models\Payments;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentsController extends Controller
 {
@@ -16,11 +17,13 @@ class PaymentsController extends Controller
         $payments = Payments::select(
             'payments.id',
             'payments.order_id',
-            'payments.payment_method_id',
+            'payment_methods.metode as metode_pembayaran',
             'payments.jumlah_bayar',
             'payments.tanggal_bayar',
             'payments.status',
-        )->get();
+        )
+        ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+        ->get();
 
         return new BaseResource(true, 'List Data payments', $payments);
     }
@@ -38,7 +41,25 @@ class PaymentsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required',
+            'payment_method_id' => 'required',
+            'jumlah_bayar' => 'required',
+            'tanggal_bayar' => 'required',
+            'status' => 'required',
+        ]);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+        $payments = Payments::create([
+            'order_id' => $request->order_id,
+            'payment_method_id' => $request->payment_method_id,
+            'jumlah_bayar' => $request->jumlah_bayar,
+            'tanggal_bayar' => $request->tanggal_bayar,
+            'status' => $request->status,
+        ]);
+
+        return new BaseResource(true, 'Berhasil Menambahkan Data Payments', $payments);
     }
 
     /**
@@ -49,13 +70,13 @@ class PaymentsController extends Controller
         $payments = Payments::select(
             'payments.id',
             'payments.order_id',
-            'payments.payment_method_id',
+            'payment_methods.metode as metode_pembayaran',
             'payments.jumlah_bayar',
             'payments.tanggal_bayar',
             'payments.status',
         )
-            ->where('payments.id', "=", $id)
-            ->get();
+        ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+        ->get();
 
         return new BaseResource(true, 'List Data payments', $payments);
     }

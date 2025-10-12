@@ -16,6 +16,7 @@ class OrderItemsController extends Controller
      */
     public function index()
     {
+<<<<<<< HEAD
         //
         // $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
         //     ->select('order_items.*', 'products.name as nama_produk')
@@ -24,6 +25,18 @@ class OrderItemsController extends Controller
         $orders = Orders::all();
         $items = OrderItems::select('id', 'order_id', 'product_id', 'jumlah', 'harga')->get();
         return new BaseResource(true, 'List Data Orders', $orders);
+=======
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga',
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->get();
+
+        return new BaseResource(true, 'List Data Order Items', $items);
+>>>>>>> main
     }
 
     /**
@@ -68,6 +81,7 @@ class OrderItemsController extends Controller
      * Display the specified resource.
      */
     public function show(string $id)
+<<<<<<< HEAD
 {
     //
     $item = OrderItems::find($id);
@@ -77,6 +91,20 @@ class OrderItemsController extends Controller
             'success' => false,
             'message' => 'Data Order Item Tidak Ditemukan',
         ], 404);
+=======
+    {
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga',
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->where('order_items.id', '=', $id)
+        ->get();
+
+        return new BaseResource(true, 'List Data Order Items', $items);
+>>>>>>> main
     }
 
     return response()->json([

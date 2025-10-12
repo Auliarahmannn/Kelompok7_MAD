@@ -13,12 +13,7 @@ class PaymentMethodController extends Controller
      */
     public function index()
     {
-        //
-         $paymentmethod = PaymentMethod::select(
-            'id',
-            'metode',
-            'deskripsi',
-        )->get();
+        $paymentmethod = PaymentMethod::all();
 
         return new BaseResource(true, 'List Data Paymen Method', $paymentmethod);
     }
