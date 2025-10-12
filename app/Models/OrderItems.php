@@ -14,7 +14,7 @@ class OrderItems extends Model
         'jumlah',
         'harga',
     ];
-<<<<<<< HEAD
+
 
     public $timestamps = false;
 
@@ -33,21 +33,20 @@ class OrderItems extends Model
      * Relasi ke tabel Orders (Many to One)
      * Setiap order item milik satu order
      */
-=======
+
     
     public $timestamps = false;
 
->>>>>>> main
+
     public function order()
     {
         return $this->belongsTo(Orders::class, 'order_id');
     }
-<<<<<<< HEAD
-=======
+
 
     public function product()
     {
         return $this->belongsTo(Products::class, 'product_id');
     }
->>>>>>> main
+
 }
