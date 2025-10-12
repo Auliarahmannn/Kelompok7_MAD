@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaymentMethod extends Model
 {
-    //
      protected $table = 'payment_methods';
     protected $fillable = [
         'metode',
@@ -14,4 +13,9 @@ class PaymentMethod extends Model
     ];
 
     public $timestamps = false;
+
+    public function payments()
+    {
+        return $this->hasMany(Payments::class, 'payment_method_id');
+    }
 }

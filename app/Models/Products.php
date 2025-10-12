@@ -16,4 +16,9 @@ class Products extends Model
     ];
 
     public $timestamps = false;
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItems::class, 'product_id');
+    }
 }
