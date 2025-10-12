@@ -39,18 +39,53 @@ class OrderItemsController extends Controller
      */
     public function store(Request $request)
     {
-        //
-        $item = OrderItems::create($request->all());
-        return new BaseResource(true, 'Data Order Item Berhasil Ditambahkan', $item);
+        // 
+        $request->validate([
+            'order_id' => 'required|integer',
+            'product_id' => 'required|integer',
+            'jumlah' => 'required|integer',
+            'harga' => 'required|numeric',
+        ]);
+
+        // 
+        $item = OrderItems::create([
+            'order_id' => $request->order_id,
+            'product_id' => $request->product_id,
+            'jumlah' => $request->jumlah,
+            'harga' => $request->harga,
+        ]);
+
+        // 
+        return response()->json([
+            'success' => true,
+            'message' => 'Data Order Item Berhasil Ditambahkan',
+            'data' => $item
+        ], 201);
     }
+
 
     /**
      * Display the specified resource.
      */
     public function show(string $id)
-    {
-        //
+{
+    //
+    $item = OrderItems::find($id);
+
+    if (!$item) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Data Order Item Tidak Ditemukan',
+        ], 404);
     }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Detail Data Order Item',
+        'data' => $item
+    ], 200);
+}
+
 
     /**
      * Show the form for editing the specified resource.
@@ -58,6 +93,7 @@ class OrderItemsController extends Controller
     public function edit(string $id)
     {
         //
+        
     }
 
     /**
@@ -66,6 +102,34 @@ class OrderItemsController extends Controller
     public function update(Request $request, string $id)
     {
         //
+         $item = OrderItems::find($id);
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Order Item Tidak Ditemukan',
+            ], 404);
+        }
+
+        $request->validate([
+            'order_id' => 'required|integer',
+            'product_id' => 'required|integer',
+            'jumlah' => 'required|integer',
+            'harga' => 'required|numeric',
+        ]);
+
+        $item->update([
+            'order_id' => $request->order_id,
+            'product_id' => $request->product_id,
+            'jumlah' => $request->jumlah,
+            'harga' => $request->harga,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data Order Item Berhasil Diupdate',
+            'data' => $item
+        ], 200);
     }
 
     /**
@@ -74,5 +138,21 @@ class OrderItemsController extends Controller
     public function destroy(string $id)
     {
         //
+         $item = OrderItems::find($id);
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Order Item Tidak Ditemukan',
+            ], 404);
+        }
+
+        $item->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data Order Item Berhasil Dihapus'
+        ], 200);
+    
     }
 }

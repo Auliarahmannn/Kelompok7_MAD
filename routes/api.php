@@ -20,6 +20,10 @@ Route::get('/orders/{id}', [OrdersController::class, 'show']);
 // order items
 Route::get('/order-items', [OrderItemsController::class, 'index']);
 Route::post('/order-items', [OrderItemsController::class, 'store']);
+Route::get('/order-items/{id}', [OrderItemsController::class, 'show']);
+Route::put('/order-items/{id}', [OrderItemsController::class, 'update']);
+Route::delete('/order-items/{id}', [OrderItemsController::class, 'destroy']);
+
 
 // products
 Route::get('/products', [ProductController::class, 'index']);
