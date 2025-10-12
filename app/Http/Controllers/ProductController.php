@@ -92,7 +92,31 @@ class ProductController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_produk' => 'required',
+            'deskripsi' => 'required',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|numeric',
+            'foto' => 'required',
+        ]);
+        if($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $products = Products::findOrFail($id);
+
+        if (!$products) {
+            return new BaseResource(false, 'Produk tidak ditemukan', null);
+        }
+
+        $products->update([
+            'nama_produk' => $request->nama_produk,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'stok' => $request->stok,
+            'foto' => $request->foto,
+        ]);
+        return new BaseResource(true, 'Data Berhasil diubah', $products);
     }
 
     /**
@@ -100,6 +124,10 @@ class ProductController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $products = Products::find($id);
+        $products->orderItems()->delete();
+        $products->delete();
+
+        return new BaseResource(true, 'Data Products Berhasil dihapus', $products);
     }
 }
