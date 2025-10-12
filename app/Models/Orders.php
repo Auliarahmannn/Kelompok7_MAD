@@ -17,7 +17,7 @@ class Orders extends Model
 
     public $timestamps = false;
 
-    // public function Customer(){
-    //     return $this->belongsTo(Customers:: class, 'customer_id');
-    // }
+    public function Customers(){
+        return $this->belongsTo(Customers:: class, 'customer_id');
+    }
 }
