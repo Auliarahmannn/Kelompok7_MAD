@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\BaseResource;
 use App\Models\Products;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
@@ -38,7 +39,25 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validator = Validator::make($request->all(), [
+            'nama_produk' => 'required',
+            'deskripsi' => 'required',
+            'harga' => 'required|numeric|min:0',
+            'stok' => 'required|numeric',
+            'foto' => 'required',
+        ]);
+        if($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+        $products = Products::create([
+            'nama_produk' => $request->nama_produk,
+            'deskripsi' => $request->deskripsi,
+            'harga' => $request->harga,
+            'stok' => $request->stok,
+            'foto' => $request->foto,
+        ]);
+
+        return new BaseResource(true, 'Berhasil Menambahkan Data Products', $products);
     }
 
     /**
