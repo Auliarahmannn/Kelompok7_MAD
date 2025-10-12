@@ -14,10 +14,14 @@ class OrderItemsController extends Controller
      */
     public function index()
     {
-        //
-        $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
-            ->select('order_items.*', 'products.name as nama_produk')
-            ->get();
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga',
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->get();
 
         return new BaseResource(true, 'List Data Order Items', $items);
     }
@@ -45,7 +49,17 @@ class OrderItemsController extends Controller
      */
     public function show(string $id)
     {
-        //
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga',
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->where('order_items.id', '=', $id)
+        ->get();
+
+        return new BaseResource(true, 'List Data Order Items', $items);
     }
 
     /**

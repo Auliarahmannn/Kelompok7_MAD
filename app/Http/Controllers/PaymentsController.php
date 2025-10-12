@@ -16,11 +16,13 @@ class PaymentsController extends Controller
         $payments = Payments::select(
             'payments.id',
             'payments.order_id',
-            'payments.payment_method_id',
+            'payment_methods.metode as metode_pembayaran',
             'payments.jumlah_bayar',
             'payments.tanggal_bayar',
             'payments.status',
-        )->get();
+        )
+        ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+        ->get();
 
         return new BaseResource(true, 'List Data payments', $payments);
     }
@@ -49,13 +51,13 @@ class PaymentsController extends Controller
         $payments = Payments::select(
             'payments.id',
             'payments.order_id',
-            'payments.payment_method_id',
+            'payment_methods.metode as metode_pembayaran',
             'payments.jumlah_bayar',
             'payments.tanggal_bayar',
             'payments.status',
         )
-            ->where('payments.id', "=", $id)
-            ->get();
+        ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+        ->get();
 
         return new BaseResource(true, 'List Data payments', $payments);
     }

@@ -13,12 +13,15 @@ class OrdersController extends Controller
      */
     public function index()
     {
-        //
-        // $orders = Orders::join('customers', 'customers.id', '=', 'orders.customer_id')
-        //     ->select('orders.*', 'customers.name as nama-customer')
-        //     ->get();
-        // return new BaseResource(true, 'List Data Orders', $orders);
-        $orders = Orders::all();
+        $orders = Orders::select(
+            'customers.name as nama_customer',
+            'orders.tanggal_pesan',
+            'orders.total',
+            'orders.status',
+        )
+        ->join('customers', 'customers.id', '=', 'orders.customer_id')
+        ->get();
+            
         return new BaseResource(true, 'List Data Orders', $orders);
     }
 
@@ -43,8 +46,13 @@ class OrdersController extends Controller
      */
     public function show(string $id) 
     {
-        //
-        $orders = Orders::select('orders.*')
+        $orders = Orders::select(
+            'customers.name as nama_customer',
+            'orders.tanggal_pesan',
+            'orders.total',
+            'orders.status',
+        )
+        ->join('customers', 'customers.id', '=', 'orders.customer_id')
         ->where('orders.id', '=', $id)
         ->get();
         
