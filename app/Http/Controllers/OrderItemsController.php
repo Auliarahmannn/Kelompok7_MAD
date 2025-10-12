@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\OrderItems; 
-use App\Http\Resources\BaseResource; 
+use App\Models\OrderItems;
+use App\Http\Resources\BaseResource;
+use App\Models\Orders;
+
 
 
 class OrderItemsController extends Controller
@@ -15,11 +17,13 @@ class OrderItemsController extends Controller
     public function index()
     {
         //
-        $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
-            ->select('order_items.*', 'products.name as nama_produk')
-            ->get();
-
-        return new BaseResource(true, 'List Data Order Items', $items);
+        // $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
+        //     ->select('order_items.*', 'products.name as nama_produk')
+        //     ->get();
+        // return new BaseResource(true, 'List Data Order Items', $items);
+        $orders = Orders::all();
+        $items = OrderItems::select('id', 'order_id', 'product_id', 'jumlah', 'harga')->get();
+        return new BaseResource(true, 'List Data Orders', $orders);
     }
 
     /**

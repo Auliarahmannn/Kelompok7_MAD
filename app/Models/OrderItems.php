@@ -14,4 +14,9 @@ class OrderItems extends Model
         'jumlah',
         'harga',
     ];
+    public $timestamps = false;
+
+    // public function Customer(){
+    //     return $this->belongsTo(Customers:: class, 'customer_id');
+    // }
 }
