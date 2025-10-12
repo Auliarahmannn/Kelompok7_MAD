@@ -3,26 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\BaseResource;
-use App\Models\Products;
+use App\Models\Customers;
 use Illuminate\Http\Request;
 
-class ProductController extends Controller
+class CustomersController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $products = Products::select(
-            'products.id',
-            'products.nama_produk',
-            'products.deskripsi',
-            'products.harga',
-            'products.stok',
-            'products.foto',
-        )->get();
-
-        return new BaseResource(true, 'List Data products', $products);
+        //
+        // $orders = Orders::join('customers', 'customers.id', '=', 'orders.customer_id')
+        //     ->select('orders.*', 'customers.name as nama-customer')
+        //     ->get();
+        // return new BaseResource(true, 'List Data Orders', $orders);
+        $orders = Customers::all();
+        return new BaseResource(true, 'List Data Customers', $orders);
     }
 
     /**
@@ -46,18 +43,12 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
-        $products = Products::select(
-            'products.id',
-            'products.nama_produk',
-            'products.deskripsi',
-            'products.harga',
-            'products.stok',
-            'products.foto',
-        )
-            ->where('products.id', '=', $id)
-            ->get();
+        //
+        $customers = Customers::select('customers.*')
+        ->where('customers.id', '=', $id)
+        ->get();
 
-        return new BaseResource(true, 'List Data products', $products);
+        return new BaseResource(true, 'Detail data customers', $customers);
     }
 
     /**
