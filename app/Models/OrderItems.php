@@ -14,40 +14,22 @@ class OrderItems extends Model
         'jumlah',
         'harga',
     ];
-<<<<<<< HEAD
 
     public $timestamps = false;
 
     // Sembunyikan kolom created_at dan updated_at dari hasil JSON/API
     protected $hidden = ['created_at', 'updated_at'];
 
-    /**
-     * Relasi ke tabel Products (Many to One)
-     */
-    public function product()
-    {
-        return $this->belongsTo(Products::class, 'product_id');
-    }
-
-    /**
-     * Relasi ke tabel Orders (Many to One)
-     * Setiap order item milik satu order
-     */
-=======
     
-    public $timestamps = false;
-
->>>>>>> main
     public function order()
     {
         return $this->belongsTo(Orders::class, 'order_id');
     }
-<<<<<<< HEAD
-=======
 
+  
     public function product()
     {
         return $this->belongsTo(Products::class, 'product_id');
     }
->>>>>>> main
+
 }
