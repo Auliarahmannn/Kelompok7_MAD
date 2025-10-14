@@ -7,8 +7,6 @@ use App\Models\OrderItems;
 use App\Http\Resources\BaseResource;
 use App\Models\Orders;
 
-
-
 class OrderItemsController extends Controller
 {
     /**
@@ -16,14 +14,25 @@ class OrderItemsController extends Controller
      */
     public function index()
     {
-        //
         // $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
         //     ->select('order_items.*', 'products.name as nama_produk')
         //     ->get();
         // return new BaseResource(true, 'List Data Order Items', $items);
+
         $orders = Orders::all();
         $items = OrderItems::select('id', 'order_id', 'product_id', 'jumlah', 'harga')->get();
-        return new BaseResource(true, 'List Data Orders', $orders);
+
+        
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga'
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->get();
+
+        return new BaseResource(true, 'List Data Order Items', $items);
     }
 
     /**
@@ -39,7 +48,6 @@ class OrderItemsController extends Controller
      */
     public function store(Request $request)
     {
-        // 
         $request->validate([
             'order_id' => 'required|integer',
             'product_id' => 'required|integer',
@@ -47,7 +55,6 @@ class OrderItemsController extends Controller
             'harga' => 'required|numeric',
         ]);
 
-        // 
         $item = OrderItems::create([
             'order_id' => $request->order_id,
             'product_id' => $request->product_id,
@@ -55,7 +62,6 @@ class OrderItemsController extends Controller
             'harga' => $request->harga,
         ]);
 
-        // 
         return response()->json([
             'success' => true,
             'message' => 'Data Order Item Berhasil Ditambahkan',
@@ -63,29 +69,32 @@ class OrderItemsController extends Controller
         ], 201);
     }
 
-
     /**
      * Display the specified resource.
      */
     public function show(string $id)
-{
-    //
-    $item = OrderItems::find($id);
+    {
+        $item = OrderItems::find($id);
 
-    if (!$item) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Data Order Item Tidak Ditemukan',
-        ], 404);
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Order Item Tidak Ditemukan',
+            ], 404);
+        }
+
+        $items = OrderItems::select(
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah',
+            'order_items.harga'
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->where('order_items.id', '=', $id)
+        ->get();
+
+        return new BaseResource(true, 'List Data Order Items', $items);
     }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Detail Data Order Item',
-        'data' => $item
-    ], 200);
-}
-
 
     /**
      * Show the form for editing the specified resource.
@@ -93,7 +102,6 @@ class OrderItemsController extends Controller
     public function edit(string $id)
     {
         //
-        
     }
 
     /**
@@ -101,8 +109,7 @@ class OrderItemsController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
-         $item = OrderItems::find($id);
+        $item = OrderItems::find($id);
 
         if (!$item) {
             return response()->json([
@@ -137,8 +144,7 @@ class OrderItemsController extends Controller
      */
     public function destroy(string $id)
     {
-        //
-         $item = OrderItems::find($id);
+        $item = OrderItems::find($id);
 
         if (!$item) {
             return response()->json([
@@ -153,6 +159,5 @@ class OrderItemsController extends Controller
             'success' => true,
             'message' => 'Data Order Item Berhasil Dihapus'
         ], 200);
-    
     }
 }
