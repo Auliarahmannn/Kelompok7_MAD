@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // daftarkan middleware peran
+        $middleware->alias([
+            'peran'=> App\Http\Middleware\Peran::class,
+        ]); 
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
