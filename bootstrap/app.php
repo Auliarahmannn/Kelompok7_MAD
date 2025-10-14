@@ -14,8 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // daftarkan middleware peran
         $middleware->alias([
-            'peran'=> App\Http\Middleware\Peran::class,
-        ]); 
+            'peran'=> App\Http\Middleware\PeranMiddleware::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

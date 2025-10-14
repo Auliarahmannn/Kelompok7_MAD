@@ -99,6 +99,7 @@ class ProductController extends Controller
             'stok' => 'required|numeric',
             'foto' => 'required',
         ]);
+
         if($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
