@@ -6,6 +6,7 @@ use App\Http\Resources\BaseResource;
 use Illuminate\Http\Request;
 use App\Models\Orders;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class OrdersController extends Controller
 {
@@ -14,14 +15,35 @@ class OrdersController extends Controller
      */
     public function index()
     {
-        $orders = Orders::select(
-            'customers.name as nama_customer',
-            'orders.tanggal_pesan',
-            'orders.total',
-            'orders.status',
-        )
-            ->join('customers', 'customers.id', '=', 'orders.customer_id')
-            ->get();
+        $user = Auth::user();
+
+        if ($user->role === 'admin') {
+            $orders = Orders::select(
+                'customers.name as nama_customer',
+                'orders.tanggal_pesan',
+                'orders.total',
+                'orders.status'
+            )
+                ->join('customers', 'customers.id', '=', 'orders.customer_id')
+                ->get();
+        } else if ($user->role === 'customer') {
+            // hanya lihat order miliknya sendiri
+            $orders = Orders::where('customer_id', $user->id)
+                ->select(
+                    'customers.name as nama_customer',
+                    'orders.tanggal_pesan',
+                    'orders.total',
+                    'orders.status'
+                )
+                ->join('customers', 'customers.id', '=', 'orders.customer_id')
+                ->get();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak dikenali atau tidak diizinkan',
+                'data' => null
+            ], 403);
+        }
 
         return new BaseResource(true, 'List Data Orders', $orders);
     }

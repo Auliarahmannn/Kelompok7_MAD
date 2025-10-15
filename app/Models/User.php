@@ -30,6 +30,10 @@ class User extends Authenticatable
         'role',
     ];
 
+    public function Customers(){
+        return $this->hasOne(Customers::class);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
