@@ -3,8 +3,8 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomersController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\OrderItemsController;
+use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProductController;
