@@ -12,6 +12,7 @@ class Customers extends Model
         'email',
         'phone',
         'address',
+        'user_id'
     ];
 
     public $timestamps = false;
@@ -19,5 +20,9 @@ class Customers extends Model
     public function orders()
     {
         return $this->hasMany(Orders::class, 'customer_id');
+    }
+
+    public function User(){
+        return $this->belongsTo(User::class);
     }
 }

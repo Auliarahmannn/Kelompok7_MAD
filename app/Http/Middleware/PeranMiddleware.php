@@ -26,6 +26,7 @@ class PeranMiddleware
             } 
         }
 
+        
         return response()->json([
             'code' => 403,
             'status' => 'error',

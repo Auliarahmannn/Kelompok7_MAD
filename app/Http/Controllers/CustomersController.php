@@ -6,6 +6,7 @@ use App\Http\Resources\BaseResource;
 use App\Models\Customers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class CustomersController extends Controller
 {
@@ -14,16 +15,38 @@ class CustomersController extends Controller
      */
     public function index()
     {
-        $customers = Customers::select(
-            'customers.id',
-            'customers.name',
-            'customers.email',
-            'customers.phone',
-            'customers.address'
-        )->get();
+        $user = Auth::user(); // memastikan user sudah login
+
+        if ($user->role === 'admin') {
+            // admin atau staff bisa lihat semua customers
+            $customers = Customers::select(
+                'customers.id',
+                'customers.name',
+                'customers.email',
+                'customers.phone',
+                'customers.address'
+            )->get();
+        } else if ($user->role === 'customer') {
+            // personel hanya bisa lihat data miliknya sendiri
+            $customers = Customers::where('user_id', $user->id)
+                ->select(
+                    'customers.id',
+                    'customers.name',
+                    'customers.email',
+                    'customers.phone',
+                    'customers.address'
+                )->get();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak dikenali atau tidak diizinkan',
+                'data' => null
+            ], 403);
+        }
 
         return new BaseResource(true, 'List Data Customers', $customers);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -63,8 +86,8 @@ class CustomersController extends Controller
             'customers.phone',
             'customers.address'
         )
-        ->where('customers.id', '=', $id)
-        ->get();
+            ->where('customers.id', '=', $id)
+            ->get();
 
         if ($customers->isEmpty()) {
             return new BaseResource(false, 'Data Customer Tidak Ditemukan', null);

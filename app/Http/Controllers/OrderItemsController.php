@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\OrderItems;
 use App\Http\Resources\BaseResource;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Orders;
 
 class OrderItemsController extends Controller
@@ -14,23 +15,36 @@ class OrderItemsController extends Controller
      */
     public function index()
     {
-        // $items = OrderItems::join('products', 'products.id', '=', 'order_items.product_id')
-        //     ->select('order_items.*', 'products.name as nama_produk')
-        //     ->get();
-        // return new BaseResource(true, 'List Data Order Items', $items);
+        $user = Auth::user();
 
-        $orders = Orders::all();
-        $items = OrderItems::select('id', 'order_id', 'product_id', 'jumlah', 'harga')->get();
-
-        
-        $items = OrderItems::select(
-            'order_items.order_id',
-            'products.nama_produk',
-            'order_items.jumlah',
-            'order_items.harga'
-        )
-        ->join('products', 'products.id', '=', 'order_items.product_id')
-        ->get();
+        if ($user->role === 'admin') {
+            $items = OrderItems::select(
+                'order_items.order_id',
+                'products.nama_produk',
+                'order_items.jumlah',
+                'order_items.harga'
+            )
+                ->join('products', 'products.id', '=', 'order_items.product_id')
+                ->get();
+        } else if ($user->role === 'customer') {
+            // hanya order_items yang ada di order miliknya
+            $items = OrderItems::select(
+                'order_items.order_id',
+                'products.nama_produk',
+                'order_items.jumlah',
+                'order_items.harga'
+            )
+                ->join('products', 'products.id', '=', 'order_items.product_id')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.customer_id', $user->id)
+                ->get();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak dikenali atau tidak diizinkan',
+                'data' => null
+            ], 403);
+        }
 
         return new BaseResource(true, 'List Data Order Items', $items);
     }
@@ -89,9 +103,9 @@ class OrderItemsController extends Controller
             'order_items.jumlah',
             'order_items.harga'
         )
-        ->join('products', 'products.id', '=', 'order_items.product_id')
-        ->where('order_items.id', '=', $id)
-        ->get();
+            ->join('products', 'products.id', '=', 'order_items.product_id')
+            ->where('order_items.id', '=', $id)
+            ->get();
 
         return new BaseResource(true, 'List Data Order Items', $items);
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Customers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,10 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:8',
+
+            // column for personel
+            'phone' => 'required|string|max:50',
+            'address' => 'nullable',
         ]);
 
         // buat user baru
@@ -25,6 +30,14 @@ class AuthController extends Controller
             'password' => Hash::make($request->password), // enkripsi password
         ]);
 
+         $customers = Customers::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'user_id' => $user->id,
+         ]);
+
         // buat token untuk user
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -33,6 +46,8 @@ class AuthController extends Controller
             'status' => 'success',
             'message' => 'User registered successfully',
             'token' => $token,
+            'user' => $user,
+            'customers' => $customers
         ]);
     }
     

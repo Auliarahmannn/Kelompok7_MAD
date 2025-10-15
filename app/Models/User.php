@@ -8,6 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @mixin \Laravel\Sanctum\HasApiTokens
+ *
+ * @method \Laravel\Sanctum\NewAccessToken createToken(string $name, array $abilities = ['*'], ?\DateTimeInterface $expiresAt = null)
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -24,6 +29,10 @@ class User extends Authenticatable
         'password',
         'role',
     ];
+
+    public function Customers(){
+        return $this->hasOne(Customers::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

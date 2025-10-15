@@ -7,6 +7,7 @@ use App\Models\Payments;
 use App\Models\Products;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
 
 class PaymentsController extends Controller
 {
@@ -15,19 +16,43 @@ class PaymentsController extends Controller
      */
     public function index()
     {
-        $payments = Payments::select(
-            'payments.id',
-            'payments.order_id',
-            'payment_methods.metode as metode_pembayaran',
-            'payments.jumlah_bayar',
-            'payments.tanggal_bayar',
-            'payments.status',
-        )
-            ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
-            ->get();
+        $user = Auth::user();
 
-        return new BaseResource(true, 'List Data payments', $payments);
+        if ($user->role === 'admin') {
+            $payments = Payments::select(
+                'payments.id',
+                'payments.order_id',
+                'payment_methods.metode as metode_pembayaran',
+                'payments.jumlah_bayar',
+                'payments.tanggal_bayar',
+                'payments.status'
+            )
+                ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+                ->get();
+        } else if ($user->role === 'customer') {
+            $payments = Payments::select(
+                'payments.id',
+                'payments.order_id',
+                'payment_methods.metode as metode_pembayaran',
+                'payments.jumlah_bayar',
+                'payments.tanggal_bayar',
+                'payments.status'
+            )
+                ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+                ->join('orders', 'orders.id', '=', 'payments.order_id')
+                ->where('orders.customer_id', $user->id)
+                ->get();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak dikenali atau tidak diizinkan',
+                'data' => null
+            ], 403);
+        }
+
+        return new BaseResource(true, 'List Data Payments', $payments);
     }
+
 
     /**
      * Show the form for creating a new resource.
