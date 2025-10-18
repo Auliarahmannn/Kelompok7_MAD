@@ -16,7 +16,7 @@ class PaymentMethodController extends Controller
     {
         $paymentmethod = PaymentMethod::all();
 
-        return new BaseResource(true, 'List Data Paymen Method', $paymentmethod);
+        return new BaseResource(true, 'List Data Paymen Method', $paymentmethod, 200);
     }
 
     /**
@@ -46,7 +46,7 @@ class PaymentMethodController extends Controller
             'deskripsi' => $request->deskripsi,
         ]);
 
-        return new BaseResource(true, 'Berhasil Menambahkan Data Payment Method', $paymentmethod);
+        return new BaseResource(true, 'Berhasil Menambahkan Data Payment Method', $paymentmethod, 201);
     }
 
     /**
@@ -79,17 +79,17 @@ class PaymentMethodController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $PaymentMethod = PaymentMethod::findOrFail($id);
+        $paymentmethod = PaymentMethod::find($id);
 
-        if (!$PaymentMethod) {
-            return new BaseResource(false, 'Metode Tidak ditemukan', null);
+        if (!$paymentmethod) {
+            return new BaseResource(false, 'Metode Tidak ditemukan', null, 404);
         }
 
-        $PaymentMethod->update([
+        $paymentmethod->update([
             'metode' => $request->metode,
             'deskripsi' => $request->deskripsi,
         ]);
-        return new BaseResource(true, 'Pembayaran Berhasil', $PaymentMethod);
+        return new BaseResource(true, 'Pembayaran Berhasil', $paymentmethod, 200);
 
     }
 
@@ -100,9 +100,13 @@ class PaymentMethodController extends Controller
     {
         //
         $paymentmethod = PaymentMethod::find($id);
+
+        if (!$paymentmethod) {
+            return new BaseResource(false, 'Metode Tidak ditemukan', null, 404);
+        }
         $paymentmethod->payments()->delete();
         $paymentmethod->delete();
 
-        return new BaseResource(true, 'Data Payment Method Berhasil dihapus', $paymentmethod);
+        return new BaseResource(true, 'Data Payment Method Berhasil dihapus', $paymentmethod, 200);
     }
 }

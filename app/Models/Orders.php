@@ -10,7 +10,7 @@ class Orders extends Model
     protected $fillable = [
         'customer_id',
         'tanggal_pesan',
-        'total',
+        'total_harga',
         'status',
     ];
 
@@ -23,7 +23,7 @@ class Orders extends Model
 
     public function orderItems()
     {
-        return $this->hasMany(OrderItems::class, 'order_id');
+        return $this->hasOne(OrderItems::class, 'order_id');
     }
 
     public function payment()
