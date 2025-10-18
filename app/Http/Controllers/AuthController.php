@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\BaseResource;
 use App\Models\User;
 use App\Models\Customers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     public function register(Request $request)
     {
         // validasi input
-        $request->validate([
+        $validator = Validator::make($request->all(),[
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:8',
@@ -22,6 +24,10 @@ class AuthController extends Controller
             'phone' => 'required|string|max:50',
             'address' => 'nullable',
         ]);
+        
+        if($validator->fails()) {
+            return new BaseResource(false, 'Validasi gagal', $validator->errors(), 422);
+        }
 
         // buat user baru
         $user = User::create([
@@ -30,13 +36,13 @@ class AuthController extends Controller
             'password' => Hash::make($request->password), // enkripsi password
         ]);
 
-         $customers = Customers::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'address' => $request->address,
-            'user_id' => $user->id,
-         ]);
+        $customers = Customers::create([
+        'name' => $user->name,
+        'email' => $user->email,
+        'phone' => $request->phone,
+        'address' => $request->address,
+        'user_id' => $user->id,
+        ]);
 
         // buat token untuk user
         $token = $user->createToken('auth_token')->plainTextToken;

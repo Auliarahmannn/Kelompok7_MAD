@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\BaseResource;
+use App\Models\Customers;
 use App\Models\Payments;
 use App\Models\Products;
 use Illuminate\Http\Request;
@@ -17,40 +18,36 @@ class PaymentsController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $query = Payments::select(
+            'payments.id',
+            'payments.order_id',
+            'payment_methods.metode as metode_pembayaran',
+            'payments.jumlah_bayar',
+            'payments.tanggal_bayar',
+            'payments.status'
+        )->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id');
 
         if ($user->role === 'admin') {
-            $payments = Payments::select(
-                'payments.id',
-                'payments.order_id',
-                'payment_methods.metode as metode_pembayaran',
-                'payments.jumlah_bayar',
-                'payments.tanggal_bayar',
-                'payments.status'
-            )
-                ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
-                ->get();
+            $payments = $query->get();
         } else if ($user->role === 'customer') {
-            $payments = Payments::select(
-                'payments.id',
-                'payments.order_id',
-                'payment_methods.metode as metode_pembayaran',
-                'payments.jumlah_bayar',
-                'payments.tanggal_bayar',
-                'payments.status'
-            )
-                ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
-                ->join('orders', 'orders.id', '=', 'payments.order_id')
-                ->where('orders.customer_id', $user->id)
-                ->get();
+            $customerId = Customers::where('customers.user_id', $user->id)->first();
+            
+            // ✅ Validasi: cek apakah customer ditemukan
+            if (!$customerId) {
+                return new BaseResource(false, 'Data customer tidak ditemukan', null, 404);
+            }
+
+            $payments = $query->join('orders', 'orders.id', '=', 'payments.order_id')
+                ->where('orders.customer_id', $customerId)->get();
+                
+            if ($payments->isEmpty()) {
+                return new BaseResource(false, 'Data tidak ditemukan', null, 404);
+            }
         } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Role tidak dikenali atau tidak diizinkan',
-                'data' => null
-            ], 403);
+            return new BaseResource(false, 'Role tidak dikenali atau tidak diizinkan', null, 403);
         }
 
-        return new BaseResource(true, 'List Data Payments', $payments);
+        return new BaseResource(true, 'List Data Payments', $payments, 200);
     }
 
 
@@ -75,7 +72,7 @@ class PaymentsController extends Controller
             'status' => 'required',
         ]);
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return new BaseResource(false, 'Validasi gagal', $validator->errors(), 422);
         }
         $payments = Payments::create([
             'order_id' => $request->order_id,
@@ -85,7 +82,7 @@ class PaymentsController extends Controller
             'status' => $request->status,
         ]);
 
-        return new BaseResource(true, 'Berhasil Menambahkan Data Payments', $payments);
+        return new BaseResource(true, 'Berhasil Menambahkan Data Payments', $payments, 201);
     }
 
     /**
@@ -93,6 +90,12 @@ class PaymentsController extends Controller
      */
     public function show(string $id)
     {
+        $payments = Payments::find($id);
+
+        if (!$payments) {
+            return new BaseResource(false, 'Produk tidak ditemukan', null, 404);
+        }
+
         $payments = Payments::select(
             'payments.id',
             'payments.order_id',
@@ -104,7 +107,7 @@ class PaymentsController extends Controller
             ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
             ->get();
 
-        return new BaseResource(true, 'List Data payments', $payments);
+        return new BaseResource(true, 'List Data payments', $payments, 200);
     }
 
     /**
@@ -128,13 +131,13 @@ class PaymentsController extends Controller
             'status' => 'required',
         ]);
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return new BaseResource(false, 'Validasi gagal', $validator->errors(), 422);
         }
 
-        $payments = Payments::findOrFail($id);
+        $payments = Payments::find($id);
 
         if (!$payments) {
-            return new BaseResource(false, 'Produk tidak ditemukan', null);
+            return new BaseResource(false, 'Produk tidak ditemukan', null, 404);
         }
 
         $payments->update([
@@ -144,7 +147,7 @@ class PaymentsController extends Controller
             'tanggal_bayar' => $request->tanggal_bayar,
             'status' => $request->status,
         ]);
-        return new BaseResource(true, 'Data Berhasil diubah', $payments);
+        return new BaseResource(true, 'Data Berhasil diubah', $payments, 200);
     }
 
     /**
@@ -155,6 +158,6 @@ class PaymentsController extends Controller
         $payments = Payments::find($id);
         $payments->delete();
 
-        return new BaseResource(true, 'Data Payments Berhasil dihapus', $payments);
+        return new BaseResource(true, 'Data Payments Berhasil dihapus', $payments, 200);
     }
 }

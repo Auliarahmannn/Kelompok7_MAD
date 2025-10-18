@@ -10,7 +10,7 @@ class Orders extends Model
     protected $fillable = [
         'customer_id',
         'tanggal_pesan',
-        'total',
+        'total_harga',
         'status',
     ];
 

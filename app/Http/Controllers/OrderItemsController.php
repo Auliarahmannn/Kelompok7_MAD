@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\OrderItems;
 use App\Http\Resources\BaseResource;
+use App\Models\Customers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Orders;
+use Illuminate\Support\Facades\Validator;
 
 class OrderItemsController extends Controller
 {
@@ -16,37 +18,31 @@ class OrderItemsController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $query = OrderItems::select(
+            'order_items.id',
+            'order_items.order_id',
+            'products.nama_produk',
+            'order_items.jumlah_produk',
+            'order_items.harga'
+        )->join('products', 'products.id', '=', 'order_items.product_id');
 
         if ($user->role === 'admin') {
-            $items = OrderItems::select(
-                'order_items.order_id',
-                'products.nama_produk',
-                'order_items.jumlah',
-                'order_items.harga'
-            )
-                ->join('products', 'products.id', '=', 'order_items.product_id')
-                ->get();
+            $items = $query->get();
         } else if ($user->role === 'customer') {
+            $customersId = Customers::where('customers.user_id', $user->id)->value('id');
+
             // hanya order_items yang ada di order miliknya
-            $items = OrderItems::select(
-                'order_items.order_id',
-                'products.nama_produk',
-                'order_items.jumlah',
-                'order_items.harga'
-            )
-                ->join('products', 'products.id', '=', 'order_items.product_id')
-                ->join('orders', 'orders.id', '=', 'order_items.order_id')
-                ->where('orders.customer_id', $user->id)
-                ->get();
+            $items = $query->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.customer_id', $customersId)->get();
+                
+            if ($items->isEmpty()) {
+                return new BaseResource(false, 'Data tidak ditemukan', null, 404);
+            }
         } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Role tidak dikenali atau tidak diizinkan',
-                'data' => null
-            ], 403);
+            return new BaseResource(false, 'Role tidak dikenali atau tidak diizinkan', null, 403);
         }
 
-        return new BaseResource(true, 'List Data Order Items', $items);
+        return new BaseResource(true, 'List Data Order Items', $items, 200);
     }
 
     /**
@@ -62,25 +58,24 @@ class OrderItemsController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'order_id' => 'required|integer',
             'product_id' => 'required|integer',
-            'jumlah' => 'required|integer',
+            'jumlah_produk' => 'required|integer',
             'harga' => 'required|numeric',
         ]);
+        if ($validator->fails()) {
+            return new BaseResource(false, 'Validasi gagal', $validator->errors(), 422);
+        }
 
         $item = OrderItems::create([
             'order_id' => $request->order_id,
             'product_id' => $request->product_id,
-            'jumlah' => $request->jumlah,
+            'jumlah_produk' => $request->jumlah_produk,
             'harga' => $request->harga,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Order Item Berhasil Ditambahkan',
-            'data' => $item
-        ], 201);
+        return new BaseResource(true, 'Berhasil Menambahkan Data Order Items', $item, 201);
     }
 
     /**
@@ -91,23 +86,20 @@ class OrderItemsController extends Controller
         $item = OrderItems::find($id);
 
         if (!$item) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data Order Item Tidak Ditemukan',
-            ], 404);
+            return new BaseResource(false, 'Data Order Item Tidak Ditemukan', null, 404);
         }
 
         $items = OrderItems::select(
             'order_items.order_id',
             'products.nama_produk',
-            'order_items.jumlah',
+            'order_items.jumlah_produk',
             'order_items.harga'
         )
             ->join('products', 'products.id', '=', 'order_items.product_id')
             ->where('order_items.id', '=', $id)
             ->get();
 
-        return new BaseResource(true, 'List Data Order Items', $items);
+        return new BaseResource(true, 'List Data Order Items', $items, 200);
     }
 
     /**
@@ -123,34 +115,30 @@ class OrderItemsController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $validator = Validator::make($request->all(), [
+            'order_id' => 'required|integer|exists:orders,id',
+            'product_id' => 'required|integer|exists:products,id',
+            'jumlah_produk' => 'required|integer',
+            'harga' => 'required|numeric',
+        ]);
+        if ($validator->fails()) {
+            return new BaseResource(false, 'Validasi gagal', $validator->errors(), 422);
+        }
+
         $item = OrderItems::find($id);
 
         if (!$item) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data Order Item Tidak Ditemukan',
-            ], 404);
+            return new BaseResource(false, 'Data Order Item Tidak Ditemukan', null, 404);
         }
-
-        $request->validate([
-            'order_id' => 'required|integer',
-            'product_id' => 'required|integer',
-            'jumlah' => 'required|integer',
-            'harga' => 'required|numeric',
-        ]);
 
         $item->update([
             'order_id' => $request->order_id,
             'product_id' => $request->product_id,
-            'jumlah' => $request->jumlah,
+            'jumlah_produk' => $request->jumlah_produk,
             'harga' => $request->harga,
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Order Item Berhasil Diupdate',
-            'data' => $item
-        ], 200);
+        return new BaseResource(true, 'Data Berhasil diubah', $item, 200);
     }
 
     /**
@@ -169,9 +157,6 @@ class OrderItemsController extends Controller
 
         $item->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data Order Item Berhasil Dihapus'
-        ], 200);
+        return new BaseResource(true, 'Data Order Item Berhasil dihapus', $item, 200);
     }
 }

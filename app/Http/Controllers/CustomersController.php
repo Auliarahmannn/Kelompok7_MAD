@@ -37,14 +37,10 @@ class CustomersController extends Controller
                     'customers.address'
                 )->get();
         } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Role tidak dikenali atau tidak diizinkan',
-                'data' => null
-            ], 403);
+            return new BaseResource(false, 'Role tidak dikenali atau tidak diizinkan', null, 403);
         }
 
-        return new BaseResource(true, 'List Data Customers', $customers);
+        return new BaseResource(true, 'List Data Customers', $customers, 200);
     }
 
 
@@ -71,7 +67,7 @@ class CustomersController extends Controller
             'address' => $request->address,
         ]);
 
-        return new BaseResource(true, 'Berhasil Menambahkan Data Customer', $customers);
+        return new BaseResource(true, 'Berhasil Menambahkan Data Customer', $customers, 201);
     }
 
     /**
@@ -90,10 +86,10 @@ class CustomersController extends Controller
             ->get();
 
         if ($customers->isEmpty()) {
-            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null);
+            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null, 404);
         }
 
-        return new BaseResource(true, 'Detail Data Customer', $customers);
+        return new BaseResource(true, 'Detail Data Customer', $customers, 200);
     }
 
     /**
@@ -115,7 +111,7 @@ class CustomersController extends Controller
         $customers = Customers::find($id);
 
         if (!$customers) {
-            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null);
+            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null, 404);
         }
 
         $customers->update([
@@ -125,7 +121,7 @@ class CustomersController extends Controller
             'address' => $request->address,
         ]);
 
-        return new BaseResource(true, 'Data Customer Berhasil Diubah', $customers);
+        return new BaseResource(true, 'Data Customer Berhasil Diubah', $customers, 200);
     }
 
     /**
@@ -136,7 +132,7 @@ class CustomersController extends Controller
         $customers = Customers::find($id);
 
         if (!$customers) {
-            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null);
+            return new BaseResource(false, 'Data Customer Tidak Ditemukan', null, 404);
         }
 
         // Jika memiliki relasi ke orders, hapus juga data terkait
@@ -144,6 +140,6 @@ class CustomersController extends Controller
 
         $customers->delete();
 
-        return new BaseResource(true, 'Data Customer Berhasil Dihapus', $customers);
+        return new BaseResource(true, 'Data Customer Berhasil Dihapus', $customers, 200);
     }
 }

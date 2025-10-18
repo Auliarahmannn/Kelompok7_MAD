@@ -23,7 +23,7 @@ class ProductController extends Controller
             'products.foto',
         )->get();
 
-        return new BaseResource(true, 'List Data products', $products);
+        return new BaseResource(true, 'List Data products', $products, 200);
     }
 
     /**
@@ -57,7 +57,7 @@ class ProductController extends Controller
             'foto' => $request->foto,
         ]);
 
-        return new BaseResource(true, 'Berhasil Menambahkan Data Products', $products);
+        return new BaseResource(true, 'Berhasil Menambahkan Data Products', $products, 201);
     }
 
     /**
@@ -65,6 +65,12 @@ class ProductController extends Controller
      */
     public function show(string $id)
     {
+        $products = Products::find($id);
+
+        if (!$products) {
+            return new BaseResource(false, 'Produk tidak ditemukan', null, 404);
+        }
+
         $products = Products::select(
             'products.id',
             'products.nama_produk',
@@ -76,7 +82,7 @@ class ProductController extends Controller
             ->where('products.id', '=', $id)
             ->get();
 
-        return new BaseResource(true, 'List Data products', $products);
+        return new BaseResource(true, 'List Data products', $products, 200);
     }
 
     /**
@@ -104,10 +110,10 @@ class ProductController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $products = Products::findOrFail($id);
+        $products = Products::find($id);
 
         if (!$products) {
-            return new BaseResource(false, 'Produk tidak ditemukan', null);
+            return new BaseResource(false, 'Produk tidak ditemukan', null, 404);
         }
 
         $products->update([
@@ -117,7 +123,7 @@ class ProductController extends Controller
             'stok' => $request->stok,
             'foto' => $request->foto,
         ]);
-        return new BaseResource(true, 'Data Berhasil diubah', $products);
+        return new BaseResource(true, 'Data Berhasil diubah', $products, 200);
     }
 
     /**
@@ -126,9 +132,14 @@ class ProductController extends Controller
     public function destroy(string $id)
     {
         $products = Products::find($id);
+
+        if (!$products) {
+            return new BaseResource(false, 'Produk tidak ditemukan', null, 404);
+        }
+
         $products->orderItems()->delete();
         $products->delete();
 
-        return new BaseResource(true, 'Data Products Berhasil dihapus', $products);
+        return new BaseResource(true, 'Data Products Berhasil dihapus', $products, 200);
     }
 }
