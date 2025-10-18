@@ -42,7 +42,7 @@ CREATE TABLE `customers` (
 
 INSERT INTO `customers` (`id`, `name`, `email`, `phone`, `address`, `user_id`) VALUES
 (1, 'Admin Toko', 'admin@gmail.com', '081000000000', 'Kantor Pusat, Jakarta', 1),
-(2, 'Customer Biasa', 'customer@gmail.com', '082000000000', 'Jl. Pembeli No. 1, Bandung', 2),
+(2, 'Customer Biasa', 'customer@gmail.com', '082000000000', 'Jl. Pembeli No. 1, Bandung', 2);
 
 -- --------------------------------------------------------
 
