@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
 
@@ -52,7 +53,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Image.asset(page["image"]!, height: 250),
+                      Image.asset(
+                        page["image"]!,
+                        height: 250,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.image_not_supported, size: 50);
+                        },
+                      ),
                       const SizedBox(height: 30),
                       Text(
                         page["title"]!,
@@ -100,7 +107,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 ),
                 onPressed: () {
                   if (_currentIndex == _pages.length - 1) {
-                    Navigator.pushReplacementNamed(context, '/home');
+                    Navigator.pushReplacementNamed(context, '/welcome');
                   } else {
                     _controller.nextPage(
                       duration: const Duration(milliseconds: 300),

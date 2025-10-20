@@ -1,3 +1,6 @@
+import 'package:campgear/pages/auth/sign_in_page.dart';
+import 'package:campgear/pages/auth/sign_up_page.dart';
+import 'package:campgear/pages/auth/welcome_page.dart';
 import 'package:flutter/material.dart';
 import 'pages/splash/splash_page.dart';
 import 'pages/onboarding/onboarding_page.dart';
@@ -21,7 +24,9 @@ class MyApp extends StatelessWidget {
       home: const SplashPage(),
       routes: {
         '/onboarding': (context) => const OnboardingPage(),
-        '/home': (context) => const Placeholder(), // ganti ke halaman utama kamu
+        '/welcome': (context) => const WelcomePage(),
+        '/signin': (context) => const SignInPage(),
+        '/signup': (context) => const SignUpPage(),
       },
     );
   }
