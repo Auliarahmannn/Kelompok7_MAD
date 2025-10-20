@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import './pages/history/history_page.dart';
+import './pages/cart/cart_page.dart';
 import 'pages/home/home_page.dart';
 import 'pages/splash/splash_page.dart';
 import 'pages/onboarding/onboarding_page.dart';
