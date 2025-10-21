@@ -9,10 +9,21 @@ class ChatPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         backgroundColor: Colors.green[700],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            // Navigasi kembali ke rute utama ('/') dan hapus semua rute di atasnya
+            // Ini akan kembali ke BottomNav dan menghapus ChatPage dari stack.
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/', // Rute BottomNav
+              (Route<dynamic> route) => route.isFirst,
+            );
+          },
+        ),
         title: const Row(
           children: [
             CircleAvatar(
-              backgroundImage: AssetImage('assets/images/gambr7.png'),
+              backgroundImage: AssetImage('assets/images/logo.png'),
             ),
             SizedBox(width: 10),
             Text('Admin'),

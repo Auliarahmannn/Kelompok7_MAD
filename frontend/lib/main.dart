@@ -25,8 +25,11 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const BottomNav(),
+      initialRoute: '/splash',
+      //home: const SplashPage(),
       routes: {
+        '/': (context) => const BottomNav(),
+        '/splash': (context) => const SplashPage(),
         '/onboarding': (context) => const OnboardingPage(),
         '/welcome': (context) => const WelcomePage(),
         '/signin': (context) => const SignInPage(),

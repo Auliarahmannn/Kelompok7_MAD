@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 class ProductDetailPage extends StatelessWidget {
   final String nama;
   final String deskripsi;
-  final String gambar;
+  final int stok;
+  final double harga;
+  final String foto;
 
   const ProductDetailPage({
     super.key,
     required this.nama,
     required this.deskripsi,
-    required this.gambar,
+    required this.stok,
+    required this.harga,
+    required this.foto,
   });
 
   @override
@@ -28,7 +32,7 @@ class ProductDetailPage extends StatelessWidget {
                 bottomRight: Radius.circular(20),
               ),
               child: Image.asset(
-                gambar,
+                foto,
                 width: double.infinity,
                 height: 275,
                 fit: BoxFit.cover,
@@ -54,17 +58,20 @@ class ProductDetailPage extends StatelessWidget {
                     deskripsi,
                     style: const TextStyle(fontSize: 15, color: Colors.grey),
                   ),
+
+                  const SizedBox(height: 20),
+                  Text(
+                    'Stok: $stok',
+                    style: const TextStyle(fontSize: 15, color: Colors.grey),
+                  ),
+
                   const SizedBox(height: 20),
 
-                  // 🔹 Spesifikasi / contoh deskripsi tambahan
-                  const Text(
-                    "Spesifikasi Produk:",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  Text(
+                    'Harga: $harga',
+                    style: const TextStyle(fontSize: 15, color: Colors.grey),
                   ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "• Kapasitas: 70 Liter\n• Bahan: Nylon tahan air\n• Berat: 1.2 kg\n• Warna: Hijau",
-                  ),
+
                   const SizedBox(height: 20),
 
                   // 🔹 Tombol aksi
