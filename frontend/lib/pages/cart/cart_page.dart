@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '/widgets/custom_button.dart';
 import '/pages/payment/payment_page.dart';
+import '/layout/buttom_nav.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -17,7 +18,8 @@ class _CartPageState extends State<CartPage> {
       name: 'Tenda Decathlon Eiger | Muat Hingga 5 Orang',
       price: 180000,
       quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400',
+      imageUrl:
+          'https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400',
       isSelected: true,
       freeShipping: true,
     ),
@@ -26,7 +28,8 @@ class _CartPageState extends State<CartPage> {
       name: 'Carrier Eiger 70L | Warna bisa request',
       price: 50000,
       quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400',
+      imageUrl:
+          'https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400',
       isSelected: false,
       hasVoucher: true,
       voucherAmount: 30000,
@@ -37,7 +40,8 @@ class _CartPageState extends State<CartPage> {
       name: 'Jaket Arei | Triple Layer Warna Merah',
       price: 30000,
       quantity: 1,
-      imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400',
+      imageUrl:
+          'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400',
       isSelected: false,
       freeShipping: true,
     ),
@@ -46,7 +50,7 @@ class _CartPageState extends State<CartPage> {
   @override
   Widget build(BuildContext context) {
     int totalPrice = _calculateTotal();
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -79,7 +83,7 @@ class _CartPageState extends State<CartPage> {
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Column(
               children: [
@@ -89,7 +93,15 @@ class _CartPageState extends State<CartPage> {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const BottomNav(),
+                            ),
+                          );
+                        },
+
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -114,9 +126,9 @@ class _CartPageState extends State<CartPage> {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Content
                 Expanded(
                   child: Container(
@@ -130,15 +142,19 @@ class _CartPageState extends State<CartPage> {
                     child: ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        ..._cartItems.map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _buildCartItem(item),
-                        )).toList(),
+                        ..._cartItems
+                            .map(
+                              (item) => Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: _buildCartItem(item),
+                              ),
+                            )
+                            .toList(),
                       ],
                     ),
                   ),
                 ),
-                
+
                 // Bottom checkout section
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -168,9 +184,7 @@ class _CartPageState extends State<CartPage> {
                       ),
                       const Text(
                         'Semua',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const Spacer(),
                       Column(
@@ -190,14 +204,17 @@ class _CartPageState extends State<CartPage> {
                       const SizedBox(width: 16),
                       CustomButton(
                         text: 'Check out',
-                        onPressed: totalPrice > 0 ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PaymentPage(totalPrice: totalPrice),
-                            ),
-                          );
-                        } : () {},
+                        onPressed: totalPrice > 0
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        PaymentPage(totalPrice: totalPrice),
+                                  ),
+                                );
+                              }
+                            : () {},
                         width: 120,
                         height: 48,
                       ),
@@ -294,17 +311,23 @@ class _CartPageState extends State<CartPage> {
                                   width: 24,
                                   height: 24,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey[400]!),
+                                    border: Border.all(
+                                      color: Colors.grey[400]!,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Icon(Icons.remove, size: 16),
                                 ),
                               ),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
                                 child: Text(
                                   '${item.quantity}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ),
                               GestureDetector(
@@ -317,7 +340,9 @@ class _CartPageState extends State<CartPage> {
                                   width: 24,
                                   height: 24,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey[400]!),
+                                    border: Border.all(
+                                      color: Colors.grey[400]!,
+                                    ),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: const Icon(Icons.add, size: 16),
@@ -333,15 +358,13 @@ class _CartPageState extends State<CartPage> {
               ],
             ),
           ),
-          
+
           if (item.hasVoucher) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
-                border: Border(
-                  top: BorderSide(color: Colors.grey[200]!),
-                ),
+                border: Border(top: BorderSide(color: Colors.grey[200]!)),
               ),
               child: Row(
                 children: [
@@ -350,25 +373,20 @@ class _CartPageState extends State<CartPage> {
                   Expanded(
                     child: Text(
                       'Voucher Discount s/d Rp. ${_formatPrice(item.voucherAmount)} syarat ketentuan berlaku',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                     ),
                   ),
                 ],
               ),
             ),
           ],
-          
+
           if (item.freeShipping) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.grey[50],
-                border: Border(
-                  top: BorderSide(color: Colors.grey[200]!),
-                ),
+                border: Border(top: BorderSide(color: Colors.grey[200]!)),
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(12),
                   bottomRight: Radius.circular(12),
@@ -381,10 +399,7 @@ class _CartPageState extends State<CartPage> {
                   Expanded(
                     child: Text(
                       'Gratis Ongkir s/d Rp. 10.000 dengan min. belanja Rp.0 khusus daerah JABODETABEK',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[700]),
                     ),
                   ),
                 ],
@@ -397,14 +412,16 @@ class _CartPageState extends State<CartPage> {
   }
 
   int _calculateTotal() {
-    return _cartItems.where((item) => item.isSelected).fold(0, (sum, item) => sum + (item.price * item.quantity));
+    return _cartItems
+        .where((item) => item.isSelected)
+        .fold(0, (sum, item) => sum + (item.price * item.quantity));
   }
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 }
 

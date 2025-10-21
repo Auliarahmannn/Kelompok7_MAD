@@ -1,3 +1,4 @@
+import 'package:campgear/layout/buttom_nav.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'verification_page.dart';
@@ -52,9 +53,11 @@ class _SignInPageState extends State<SignInPage> {
                       decoration: InputDecoration(
                         hintText: "Masukan Password Anda",
                         suffixIcon: IconButton(
-                          icon: Icon(obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () {
                             setState(() {
                               obscurePassword = !obscurePassword;
@@ -78,10 +81,10 @@ class _SignInPageState extends State<SignInPage> {
                         backgroundColor: const Color(0xFFD3B073),
                       ),
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const VerificationPage()),
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/', // Gunakan nama rute utama Anda ('/')
+                          (Route<dynamic> route) =>
+                              false, // Predikat ini memastikan semua rute sebelumnya dihapus
                         );
                       },
                       child: const Text(
@@ -95,10 +98,10 @@ class _SignInPageState extends State<SignInPage> {
                     Center(
                       child: Image.network(
                         'http://pngimg.com/uploads/google/google_PNG19635.png',
-                        fit:BoxFit.cover,
+                        fit: BoxFit.cover,
                         width: 50,
                         height: 50,
-                      )
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Center(
@@ -115,16 +118,19 @@ class _SignInPageState extends State<SignInPage> {
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  Navigator.pushReplacementNamed(context, '/signup');
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/signup',
+                                  );
                                 },
-                            )
+                            ),
                           ],
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),
