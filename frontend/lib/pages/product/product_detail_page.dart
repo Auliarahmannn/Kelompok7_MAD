@@ -21,6 +21,7 @@ class ProductDetailPage extends StatelessWidget {
         child: Column(
           children: [
             // 🔹 Gambar produk
+            const SizedBox(height: 20),
             ClipRRect(
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
@@ -29,7 +30,7 @@ class ProductDetailPage extends StatelessWidget {
               child: Image.asset(
                 gambar,
                 width: double.infinity,
-                height: 250,
+                height: 275,
                 fit: BoxFit.cover,
               ),
             ),
