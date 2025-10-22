@@ -44,76 +44,118 @@ class _ProductGridState extends State<ProductGrid> {
 
         final productList = snapshot.data!;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(12),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 3 / 4,
-          ),
-          itemCount: productList.length,
-          itemBuilder: (context, index) {
-            final item = productList[index];
+        return Transform.translate(
+          offset: const Offset(0, -20),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.73,
+            ),
+            itemCount: productList.length,
+            itemBuilder: (context, index) {
+              final item = productList[index];
 
-            final imageWidget = (item.foto.isNotEmpty)
-                ? Image.asset(
-                    'assets/images/${item.foto}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.image_not_supported, size: 50),
-                  )
-                : Image.asset(
-                    'assets/images/gambar1.png',
-                    fit: BoxFit.cover,
-                  );
+              final imageWidget = (item.foto.isNotEmpty)
+                  ? Image.asset(
+                      'assets/images/${item.foto}',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.image_not_supported, size: 50),
+                    )
+                  : Image.asset(
+                      'assets/images/gambar1.png',
+                      fit: BoxFit.cover,
+                    );
 
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ProductDetailPage(
-                      nama: item.namaProduk,
-                      deskripsi: item.deskripsi,
-                      stok: item.stok,
-                      harga: item.harga,
-                      foto: item.foto.isNotEmpty
-                          ? 'assets/images/${item.foto}'
-                          : 'assets/images/gambar1.png',
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(child: imageWidget),
-                    const SizedBox(height: 8),
-                    Text(
-                      item.namaProduk,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProductDetailPage(
+                        nama: item.namaProduk,
+                        deskripsi: item.deskripsi,
+                        stok: item.stok,
+                        harga: item.harga,
+                        foto: item.foto.isNotEmpty
+                            ? 'assets/images/${item.foto}'
+                            : 'assets/images/gambar1.png',
                       ),
                     ),
-                    Text(
-                      formatRupiah(item.harga),
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                  );
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        flex: 7,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          child: imageWidget,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF597E52),
+                            borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(12),
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.namaProduk,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                formatRupiah(item.harga),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
