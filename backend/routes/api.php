@@ -10,8 +10,11 @@ use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProductController;
 
 // ==================== AUTH ROUTES ====================
+Route::post('/auth/send-code', [AuthController::class, 'sendVerificationCode']);
+Route::post('/auth/verify-code', [AuthController::class, 'verifyCode']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
 
 Route::get('/products', [ProductController::class, 'index']);
 // ==================== ADMIN ROUTES ====================

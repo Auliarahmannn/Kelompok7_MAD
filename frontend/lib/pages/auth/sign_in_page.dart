@@ -83,8 +83,7 @@ class _SignInPageState extends State<SignInPage> {
                       onPressed: () {
                         Navigator.of(context).pushNamedAndRemoveUntil(
                           '/', // Gunakan nama rute utama Anda ('/')
-                          (Route<dynamic> route) =>
-                              false, // Predikat ini memastikan semua rute sebelumnya dihapus
+                          (Route<dynamic> route) => false, // Predikat ini memastikan semua rute sebelumnya dihapus
                         );
                       },
                       child: const Text(

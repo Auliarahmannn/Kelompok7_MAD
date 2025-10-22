@@ -1,3 +1,4 @@
+import 'package:campgear/services/auth_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'verification_page.dart';
@@ -14,18 +15,22 @@ class _SignUpPageState extends State<SignUpPage> {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
   final repeatPasswordController = TextEditingController();
+  final phoneController = TextEditingController();
+  final addressController = TextEditingController();
 
   bool obscurePassword = true;
   bool obscureRepeatPassword = true;
 
-  void handleSignUp() {
+  void handleSignUp() async {
     final email = emailController.text.trim();
     final username = usernameController.text.trim();
     final password = passwordController.text;
     final repeatPassword = repeatPasswordController.text;
+    final phone = phoneController.text.trim(); // 🔥 Data Phone
+    final address = addressController.text.trim(); // 🔥 Data Address
 
     // ✅ Validasi sederhana
-    if (email.isEmpty || username.isEmpty || password.isEmpty || repeatPassword.isEmpty) {
+    if (email.isEmpty || username.isEmpty || password.isEmpty || repeatPassword.isEmpty || phone.isEmpty || address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Semua field wajib diisi')),
       );
@@ -46,13 +51,28 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // TODO: nanti di sini bisa ditambah API register ke Laravel
+    // Panggil backend untuk kirim kode verifikasi
+    final response = await AuthService.sendCode(email);
 
-    // sementara langsung ke halaman verifikasi
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const VerificationPage()),
-    );
+    final status = response['status'];
+    if (status == true || status == 1 || status == 'success') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VerificationPage(
+            email: email,
+            name: username,
+            password: password,
+            phone: phone, // 🔥 Kirim Phone
+            address: address, // 🔥 Kirim Address
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response['message'] ?? 'Gagal mengirim kode')),
+      );
+    }
   }
 
   @override
@@ -89,6 +109,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         hintText: "Masukan Email Anda",
                       ),
                     ),
+
                     const SizedBox(height: 16),
                     const Text("Username"),
                     TextField(
@@ -97,6 +118,29 @@ class _SignUpPageState extends State<SignUpPage> {
                         hintText: "Masukan Username Anda",
                       ),
                     ),
+                    
+                    // 🔥 FIELD BARU: Phone
+                    const SizedBox(height: 16),
+                    const Text("Phone Number"),
+                    TextField(
+                      controller: phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        hintText: "Masukan Nomor Telepon Anda",
+                      ),
+                    ),
+
+                    // 🔥 FIELD BARU: Address
+                    const SizedBox(height: 16),
+                    const Text("Address"),
+                    TextField(
+                      controller: addressController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: "Masukan Alamat Lengkap Anda",
+                      ),
+                    ),
+
                     const SizedBox(height: 16),
                     const Text("Password"),
                     TextField(
@@ -116,6 +160,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 16),
                     const Text("Repeat Password"),
                     TextField(
@@ -135,6 +180,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 24),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
@@ -169,7 +215,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           style: const TextStyle(color: Colors.black87),
                           children: [
                             TextSpan(
-                              text: "Sign Up",
+                              text: "Sign In",
                               style: TextStyle(
                                 color: const Color(0xFFD3B073),
                                 fontWeight: FontWeight.bold,
