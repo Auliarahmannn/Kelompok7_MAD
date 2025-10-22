@@ -15,8 +15,6 @@ Route::post('/auth/verify-code', [AuthController::class, 'verifyCode']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
-
-Route::get('/products', [ProductController::class, 'index']);
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth:sanctum', 'peran:admin'])->group(function () {
 
@@ -66,7 +64,7 @@ Route::middleware(['auth:sanctum', 'peran:customer'])->group(function () {
 Route::middleware(['auth:sanctum', 'peran:admin-customer'])->group(function () {
 
     // Products (lihat semua)
-    // Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
 
     // Orders (admin: semua, customer: miliknya)

@@ -5,21 +5,32 @@ class SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: const TextField(
-        decoration: InputDecoration(
-          hintText: 'Temukan alat camping',
-          border: InputBorder.none,
-          icon: Icon(Icons.search, color: Colors.white),
-          hintStyle: TextStyle(color: Colors.white),
+    return Transform.translate(
+      offset: const Offset(0, -30),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        style: TextStyle(color: Colors.white),
+        child: TextField(
+          decoration: InputDecoration(
+            hintText: 'Temukan alat camping',
+            border: InputBorder.none,
+            icon: Icon(Icons.search, color: Colors.grey[600]),
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          ),
+          style: const TextStyle(color: Colors.black87),
+        ),
       ),
     );
   }
