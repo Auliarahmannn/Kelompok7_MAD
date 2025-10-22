@@ -20,33 +20,30 @@ class HomeHeader extends StatelessWidget {
         Container(
           width: double.infinity,
           height: 250,
-          color: Colors.black.withOpacity(0.4),
+          color: Colors.black.withOpacity(0.3),
         ),
         Positioned(
-          top: 20,
+          top: 40,
           left: 20,
-          right: 20,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 5),
-              const Text(
+            children: const [
+              Text(
                 'Good Night,',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Text(
+              Text(
                 'Sunrise',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 26,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 20),
             ],
           ),
         ),
