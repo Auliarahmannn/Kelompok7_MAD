@@ -1,36 +1,53 @@
 import 'package:flutter/material.dart';
 
-class SearchField extends StatelessWidget {
-  const SearchField({super.key});
+class SearchBarWidget extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final VoidCallback? onSearch;
+  // Pastikan onChanged memiliki tipe Function(String)
+  final Function(String)? onChanged; 
+
+  const SearchBarWidget({
+    Key? key,
+    required this.controller,
+    this.hint = 'Cari produk...',
+    this.onSearch,
+    this.onChanged,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Transform.translate(
-      offset: const Offset(0, -30),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Temukan alat camping',
-            border: InputBorder.none,
-            icon: Icon(Icons.search, color: Colors.grey[600]),
-            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 15),
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          style: const TextStyle(color: Colors.black87),
-        ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.search, color: Colors.grey),
+          const SizedBox(width: 12),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              // Callback ini yang mengirim teks ke HomePage
+              onChanged: onChanged, 
+              onSubmitted: (_) => onSearch?.call(),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                border: InputBorder.none,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

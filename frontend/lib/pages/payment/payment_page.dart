@@ -84,7 +84,7 @@ class PaymentPage extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: Color(0xFFF5F5F5),
+                      color: Color(0xFFF0F0F0),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(24),
                         topRight: Radius.circular(24),

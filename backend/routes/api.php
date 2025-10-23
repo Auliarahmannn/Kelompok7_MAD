@@ -12,8 +12,13 @@ use App\Http\Controllers\ProductController;
 // ==================== AUTH ROUTES ====================
 Route::post('/auth/send-code', [AuthController::class, 'sendVerificationCode']);
 Route::post('/auth/verify-code', [AuthController::class, 'verifyCode']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::put('/profile/update', [AuthController::class, 'updateProfile'])->middleware('auth:sanctum');
+
 
 // ==================== ADMIN ROUTES ====================
 Route::middleware(['auth:sanctum', 'peran:admin'])->group(function () {

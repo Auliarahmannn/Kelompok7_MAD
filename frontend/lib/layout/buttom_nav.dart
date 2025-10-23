@@ -1,5 +1,6 @@
 import 'package:campgear/pages/cart/cart_page.dart';
 import 'package:campgear/pages/history/history_page.dart';
+import 'package:campgear/pages/profile/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/pages/home/home_page.dart';
 import 'package:campgear/pages/chat/chat_page.dart';
@@ -21,7 +22,7 @@ class _BottomNavState extends State<BottomNav> {
     ChatPage(),
     HistoryPage(),
     CartPage(),
-    // ProfilePage(),
+    ProfilePage(),
   ];
 
   @override
