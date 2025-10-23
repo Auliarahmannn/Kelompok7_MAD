@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/product_model.dart';
 import 'package:campgear/pages/product/product_detail_page.dart';
-import 'package:campgear/data/api_services.dart';
+import 'package:campgear/services/product_service.dart';
 
 class ProductGrid extends StatefulWidget {
-  const ProductGrid({super.key});
+  // 1. Tambahkan parameter searchQuery
+  final String searchQuery;
+  
+  const ProductGrid({super.key, required this.searchQuery}); 
 
   @override
   State<ProductGrid> createState() => _ProductGridState();
@@ -13,11 +16,27 @@ class ProductGrid extends StatefulWidget {
 
 class _ProductGridState extends State<ProductGrid> {
   late Future<List<Products>> futureProducts;
+  // Simpan daftar produk asli setelah di-fetch
+  List<Products> _allProducts = []; 
 
   @override
   void initState() {
     super.initState();
-    futureProducts = ApiServices.getProducts();
+    // Fetch data dan simpan ke _allProducts
+    futureProducts = ProductService.getProducts().then((products) {
+      _allProducts = products; 
+      return products;
+    });
+  }
+  
+  // Perlu dipanggil setiap kali searchQuery berubah (karena ProductGrid adalah StatefulWidget)
+  @override
+  void didUpdateWidget(covariant ProductGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery) {
+      // Pemicu rebuild saat teks pencarian berubah
+      setState(() {}); 
+    }
   }
 
   String formatRupiah(double harga) {
@@ -42,7 +61,21 @@ class _ProductGridState extends State<ProductGrid> {
           return const Center(child: Text('Tidak ada produk tersedia'));
         }
 
-        final productList = snapshot.data!;
+        // --- Logika Filtering ---
+        final searchQuery = widget.searchQuery.toLowerCase();
+        
+        final filteredProductList = _allProducts.where((product) {
+          // Filter produk yang namanya mengandung searchQuery
+          return product.namaProduk.toLowerCase().contains(searchQuery);
+        }).toList();
+
+        if (filteredProductList.isEmpty && searchQuery.isNotEmpty) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 50.0),
+            child: Center(child: Text('Produk yang Anda cari tidak ditemukan.')),
+          );
+        }
+        // -------------------------
 
         return Transform.translate(
           offset: const Offset(0, -20),
@@ -56,9 +89,9 @@ class _ProductGridState extends State<ProductGrid> {
               mainAxisSpacing: 10,
               childAspectRatio: 0.73,
             ),
-            itemCount: productList.length,
+            itemCount: filteredProductList.length, // Gunakan list yang difilter
             itemBuilder: (context, index) {
-              final item = productList[index];
+              final item = filteredProductList[index]; // Gunakan list yang difilter
 
               final imageWidget = (item.foto.isNotEmpty)
                   ? Image.asset(
@@ -117,9 +150,9 @@ class _ProductGridState extends State<ProductGrid> {
                         flex: 3,
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF597E52),
-                            borderRadius: const BorderRadius.vertical(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF597E52),
+                            borderRadius: BorderRadius.vertical(
                               bottom: Radius.circular(12),
                             ),
                           ),

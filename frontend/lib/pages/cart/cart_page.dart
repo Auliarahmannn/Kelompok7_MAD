@@ -108,6 +108,7 @@ class _CartPageState extends State<CartPage> {
                             color: Colors.white.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
+                          // icon back
                           child: const Icon(
                             Icons.arrow_back,
                             color: Colors.white,
@@ -133,7 +134,7 @@ class _CartPageState extends State<CartPage> {
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: Colors.white,
+                      color: Color(0xFFF0F0F0),
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(24),
                         topRight: Radius.circular(24),
@@ -169,37 +170,54 @@ class _CartPageState extends State<CartPage> {
                     ],
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Checkbox(
-                        value: _selectAll,
-                        onChanged: (value) {
-                          setState(() {
-                            _selectAll = value ?? false;
-                            for (var item in _cartItems) {
-                              item.isSelected = _selectAll;
-                            }
-                          });
-                        },
-                        activeColor: const Color(0xFF5D7F5F),
-                      ),
-                      const Text(
-                        'Semua',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      const Spacer(),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(
-                            'Rp. ${_formatPrice(totalPrice)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD4A574),
-                            ),
+                          // 1. Checkbox & Tulisan "Semua"
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _selectAll,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectAll = value ?? false;
+                                    for (var item in _cartItems) {
+                                      item.isSelected = _selectAll;
+                                    }
+                                  });
+                                },
+                                activeColor: const Color(0xFF5D7F5F),
+                              ),
+                              const Text(
+                                'Semua',
+                                style: TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                            ],
                           ),
-                        ],
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12.0, top: 2.0), // Padding disesuaikan agar sejajar visual
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(width: 16),
+                                Text(
+                                  'Rp. ${_formatPrice(totalPrice)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFD4A574),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        ]
                       ),
                       const SizedBox(width: 16),
                       CustomButton(

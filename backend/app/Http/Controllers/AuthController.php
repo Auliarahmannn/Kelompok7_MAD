@@ -141,6 +141,7 @@ class AuthController extends Controller
                 'message' => 'Login successful',
                 'token' => $token,
                 'role' => $role,
+                'user' => $user,
             ], 200);
         }
 
@@ -150,5 +151,71 @@ class AuthController extends Controller
             'status' => 'error',
             'message' => 'Login failed',
         ], 401);
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user) {
+            // Hapus semua token aktif milik user
+            $user->tokens()->delete();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Logout berhasil, token dihapus'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'User tidak ditemukan'
+        ], 404);
+    }
+
+    // =================== UPDATE PROFILE ===================
+    public function updateProfile(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'User tidak ditemukan'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|string|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => 'error', 'errors' => $validator->errors()], 422);
+        }
+
+        // Update tabel users
+        $user->update([
+            'name' => $request->name ?? $user->name,
+            'email' => $request->email ?? $user->email,
+        ]);
+
+        // Update tabel customers
+        $customer = Customers::where('user_id', $user->id)->first();
+        if ($customer) {
+            $customer->update([
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $request->phone ?? $customer->phone,
+                'address' => $request->address ?? $customer->address,
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profil berhasil diperbarui',
+            'user' => $user,
+            'customer' => $customer,
+        ]);
     }
 }

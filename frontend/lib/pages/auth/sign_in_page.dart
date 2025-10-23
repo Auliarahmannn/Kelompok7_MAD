@@ -1,8 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/layout/buttom_nav.dart';
-import '../../data/api_services.dart';
-import 'verification_page.dart';
+import 'package:campgear/services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -14,6 +13,7 @@ class SignInPage extends StatefulWidget {
 class _SignInPageState extends State<SignInPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+
   bool obscurePassword = true;
   bool loading = false;
 
@@ -21,7 +21,7 @@ class _SignInPageState extends State<SignInPage> {
   String? passwordError;
   String? generalError;
 
-  void _login() async {
+  Future<void> _login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
@@ -44,22 +44,23 @@ class _SignInPageState extends State<SignInPage> {
     if (password.isEmpty) {
       passwordError = 'Password tidak boleh kosong';
       hasError = true;
-    } else if (password.length < 6) {
-      passwordError = 'Password minimal 6 karakter';
+    } else if (password.length < 8) {
+      passwordError = 'Password minimal 8 karakter';
       hasError = true;
     }
 
     if (hasError) {
-      setState(() {}); // refresh error
+      setState(() {});
       return;
     }
 
     setState(() => loading = true);
 
     try {
-      final result = await ApiServices.login(email, password);
+      final result = await AuthService.login(email, password);
 
       if (result['status'] == 'success') {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const BottomNav()),
@@ -204,7 +205,7 @@ class _SignInPageState extends State<SignInPage> {
                           Center(
                             child: Text.rich(
                               TextSpan(
-                                text: "Don't have account? ",
+                                text: "Don't have an account? ",
                                 children: [
                                   TextSpan(
                                     text: "Sign Up",
@@ -216,9 +217,7 @@ class _SignInPageState extends State<SignInPage> {
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.pushReplacementNamed(
-                                          context,
-                                          '/signup',
-                                        );
+                                            context, '/signup');
                                       },
                                   ),
                                 ],
