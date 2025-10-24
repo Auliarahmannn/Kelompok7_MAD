@@ -8,11 +8,32 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _logoAnimation;
+
+  final String _appName = 'CampGear';
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 10), () {
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    // Logo jatuh seperti bola memantul
+    _logoAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.bounceOut,
+    );
+
+    _controller.forward();
+
+    // Navigate setelah delay
+    Future.delayed(const Duration(seconds: 5), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const OnboardingPage()),
@@ -21,25 +42,47 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Color(0xFF5D755E),
+    return Scaffold(
+      backgroundColor: const Color(0xFF5D755E),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image(
-              image: AssetImage('assets/images/logo.png'),
-              width: 120,
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return Transform.translate(
+                  offset: Offset(0, (1 - _logoAnimation.value) * -200),
+                  child: Image.asset(
+                    'assets/images/logo.png',
+                    width: 120,
+                  ),
+                );
+              },
             ),
-            SizedBox(height: 20),
-            Text(
-              'CampGear',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+            const SizedBox(height: 20),
+            // Teks ketikan otomatis
+            TweenAnimationBuilder<int>(
+              tween: IntTween(begin: 0, end: _appName.length),
+              duration: const Duration(seconds: 2),
+              builder: (context, value, child) {
+                String text = _appName.substring(0, value);
+                return Text(
+                  text,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
             ),
           ],
         ),
