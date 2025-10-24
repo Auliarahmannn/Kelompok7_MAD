@@ -8,6 +8,7 @@ use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\UsersController;
 
 // ==================== AUTH ROUTES ====================
 Route::post('/auth/send-code', [AuthController::class, 'sendVerificationCode']);
@@ -90,4 +91,9 @@ Route::middleware(['auth:sanctum', 'peran:admin-customer'])->group(function () {
     // Customers
     Route::get('/customers', [CustomersController::class, 'index']);
     Route::get('/customers/{id}', [CustomersController::class, 'show']);
+
+    // Profile Users
+    Route::get('/users/profile', [UsersController::class, 'getProfile']);
+    Route::put('/users/profile', [UsersController::class, 'updateProfile']);
+    Route::delete('/users/profile', [UsersController::class, 'deleteAccount']);
 });
