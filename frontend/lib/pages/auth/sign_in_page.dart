@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/layout/buttom_nav.dart';
+import 'package:campgear/pages/admin/admin_nav.dart';
 import 'package:campgear/services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
@@ -60,11 +61,21 @@ class _SignInPageState extends State<SignInPage> {
       final result = await AuthService.login(email, password);
 
       if (result['status'] == 'success') {
+        final role = result['role'];
+
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const BottomNav()),
-        );
+
+        if (role == 'admin') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminNav()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const BottomNav()),
+          );
+        }
       } else {
         setState(() => generalError = result['message'] ?? 'Login gagal');
       }
@@ -118,7 +129,9 @@ class _SignInPageState extends State<SignInPage> {
                               child: Text(
                                 emailError!,
                                 style: const TextStyle(
-                                    color: Colors.red, fontSize: 12),
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           const SizedBox(height: 16),
@@ -149,7 +162,9 @@ class _SignInPageState extends State<SignInPage> {
                               child: Text(
                                 passwordError!,
                                 style: const TextStyle(
-                                    color: Colors.red, fontSize: 12),
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                ),
                               ),
                             ),
                           const SizedBox(height: 10),
@@ -169,7 +184,9 @@ class _SignInPageState extends State<SignInPage> {
                               child: Text(
                                 generalError!,
                                 style: const TextStyle(
-                                    color: Colors.red, fontSize: 13),
+                                  color: Colors.red,
+                                  fontSize: 13,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -182,7 +199,8 @@ class _SignInPageState extends State<SignInPage> {
                             onPressed: loading ? null : _login,
                             child: loading
                                 ? const CircularProgressIndicator(
-                                    color: Colors.white)
+                                    color: Colors.white,
+                                  )
                                 : const Text(
                                     "Sign In",
                                     style: TextStyle(color: Colors.white),
@@ -217,7 +235,9 @@ class _SignInPageState extends State<SignInPage> {
                                     recognizer: TapGestureRecognizer()
                                       ..onTap = () {
                                         Navigator.pushReplacementNamed(
-                                            context, '/signup');
+                                          context,
+                                          '/signup',
+                                        );
                                       },
                                   ),
                                 ],
