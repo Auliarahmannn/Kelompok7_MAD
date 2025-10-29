@@ -4,7 +4,6 @@ import 'package:campgear/pages/profile/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/pages/home/home_page.dart';
 import 'package:campgear/pages/chat/chat_page.dart';
-// import 'package:campgear/pages/profile/profile_page.dart';
 
 class BottomNav extends StatefulWidget {
   const BottomNav({super.key});

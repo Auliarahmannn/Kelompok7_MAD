@@ -65,7 +65,7 @@ class AdminDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const ProfilePage()),
+                MaterialPageRoute(builder: (context) => const AdminProfilePage()),
               );
             },
           ),

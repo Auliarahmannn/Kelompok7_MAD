@@ -7,16 +7,14 @@ import 'package:campgear/pages/profile/profile_update.dart';
 import 'package:campgear/pages/profile/profile_delete.dart';
 import 'package:campgear/pages/profile/profile_change_password.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class AdminProfilePage extends StatefulWidget {
+  const AdminProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<AdminProfilePage> createState() => _AdminProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
-  // Key to control the Scaffold (needed to open the drawer)
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+class _AdminProfilePageState extends State<AdminProfilePage> {
 
   UserModel? user;
   bool isLoading = true;
