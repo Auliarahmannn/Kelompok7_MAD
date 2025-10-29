@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:campgear/pages/admin/dashboard_page.dart';
 import 'package:campgear/pages/admin/manage_product_page.dart';
 import 'package:campgear/pages/admin/manage_orders_page.dart';
+import 'package:campgear/pages/admin/revenue_page.dart';
+import 'package:campgear/pages/admin/manage_users_page.dart';
 import 'package:campgear/services/auth_service.dart';
 
 class AdminDrawer extends StatelessWidget {
@@ -114,6 +116,34 @@ class AdminDrawer extends StatelessWidget {
                 MaterialPageRoute(
                   builder: (context) => const ManageOrdersPage(),
                 ),
+              );
+            },
+          ),
+
+          buildMenuItem(
+            context,
+            icon: Icons.attach_money,
+            text: "Pendapatan",
+            color: const Color(0xFF6B8F71),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RevenuePage()),
+              );
+            },
+          ),
+
+          buildMenuItem(
+            context,
+            icon: Icons.people,
+            text: "Pengguna",
+            color: const Color(0xFF6B8F71),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UserPage()),
               );
             },
           ),

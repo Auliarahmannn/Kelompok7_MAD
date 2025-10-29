@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:campgear/widgets/admin_drawer.dart';
 
+// Import halaman yang mau dituju
+import 'package:campgear/pages/admin/manage_product_page.dart';
+import 'package:campgear/pages/admin/manage_orders_page.dart';
+import 'package:campgear/pages/admin/revenue_page.dart';
+import 'package:campgear/pages/admin/manage_users_page.dart';
+
 class AdminDashboardPage extends StatelessWidget {
   const AdminDashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const AdminDrawer(), 
+      drawer: const AdminDrawer(),
       appBar: AppBar(
         title: const Text(
           "Dashboard Admin",
@@ -20,21 +26,49 @@ class AdminDashboardPage extends StatelessWidget {
         crossAxisCount: 2,
         padding: const EdgeInsets.all(16),
         children: [
-          _buildCard(context, Icons.shopping_bag, "Kelola Produk", Colors.blue),
-          _buildCard(context, Icons.list_alt, "Kelola Pesanan", Colors.green),
-          _buildCard(context, Icons.attach_money, "Pendapatan", Colors.purple),
-          _buildCard(context, Icons.people, "Pengguna", Colors.orange),
+          _buildCard(
+            context,
+            icon: Icons.shopping_bag,
+            label: "Kelola Produk",
+            color: Colors.blue,
+            page: const ManageProductPage(),
+          ),
+          _buildCard(
+            context,
+            icon: Icons.list_alt,
+            label: "Kelola Pesanan",
+            color: Colors.green,
+            page: const ManageOrdersPage(),
+          ),
+          _buildCard(
+            context,
+            icon: Icons.attach_money,
+            label: "Pendapatan",
+            color: Colors.purple,
+            page: const RevenuePage(),
+          ),
+          _buildCard(
+            context,
+            icon: Icons.people,
+            label: "Pengguna",
+            color: Colors.orange,
+            page: const UserPage(),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCard(BuildContext context, IconData icon, String label, Color color) {
+  Widget _buildCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required Color color,
+    required Widget page,
+  }) {
     return GestureDetector(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Buka halaman $label')),
-        );
+        Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
       child: Card(
         elevation: 3,
