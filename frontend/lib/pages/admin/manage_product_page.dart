@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/admin_drawer.dart';
 
 class ManageProductPage extends StatefulWidget {
   const ManageProductPage({super.key});
@@ -22,6 +23,7 @@ class _ManageProductPageState extends State<ManageProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AdminDrawer(),
       appBar: AppBar(title: const Text("Kelola Produk")),
       body: ListView.builder(
         itemCount: produk.length,

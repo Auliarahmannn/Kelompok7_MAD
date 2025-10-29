@@ -1,7 +1,7 @@
+import 'package:campgear/pages/admin/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import '../onboarding/onboarding_page.dart';
 import 'package:campgear/layout/buttom_nav.dart';
-import 'package:campgear/pages/admin/admin_nav.dart';
 import 'package:campgear/services/auth_service.dart';
 
 class SplashPage extends StatefulWidget {
@@ -49,7 +49,7 @@ class _SplashPageState extends State<SplashPage>
       if (role == 'admin') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const AdminNav()),
+          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
         );
       } else {
         Navigator.pushReplacement(
