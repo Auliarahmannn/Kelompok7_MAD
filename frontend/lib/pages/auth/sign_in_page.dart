@@ -1,3 +1,4 @@
+import 'package:campgear/pages/admin/dashboard_page.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/layout/buttom_nav.dart';
@@ -67,7 +68,7 @@ class _SignInPageState extends State<SignInPage> {
         if (role == 'admin') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const BottomNav()),
+            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
           );
         } else {
           Navigator.pushReplacement(
