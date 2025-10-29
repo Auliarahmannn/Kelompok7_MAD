@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:campgear/layout/buttom_nav.dart';
-import 'package:campgear/pages/admin/admin_nav.dart';
 import 'package:campgear/services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
@@ -68,7 +67,7 @@ class _SignInPageState extends State<SignInPage> {
         if (role == 'admin') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const AdminNav()),
+            MaterialPageRoute(builder: (_) => const BottomNav()),
           );
         } else {
           Navigator.pushReplacement(
