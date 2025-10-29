@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/home_header.dart';
-import '../../widgets/search_field.dart';
-import '../../widgets/product_card.dart';
-import '../../widgets/admin_drawer.dart';
-import '../../services/auth_service.dart';
+import '../../widgets/search_field.dart'; // SearchBarWidget
+import '../../widgets/product_card.dart'; // ProductGrid
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,22 +11,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // 1. Tambahkan controller dan state untuk query pencarian
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  bool _isAdmin = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAdminStatus();
-  }
-
-  Future<void> _checkAdminStatus() async {
-    final role = await AuthService.getRole();
-    setState(() {
-      _isAdmin = (role == 'admin');
-    });
-  }
+  String _searchQuery = ''; 
 
   @override
   void dispose() {
@@ -36,6 +21,7 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  // Fungsi untuk memperbarui state query
   void _updateSearchQuery(String newQuery) {
     setState(() {
       _searchQuery = newQuery;
@@ -46,13 +32,10 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      // Tambahkan drawer hanya jika admin
-      drawer: _isAdmin ? const AdminDrawer() : null,
       body: SingleChildScrollView(
         child: Stack(
           children: [
-            // Header berbeda untuk admin
-            _isAdmin ? _buildAdminHeader() : const HomeHeader(),
+            const HomeHeader(),
             Padding(
               padding: const EdgeInsets.only(
                 top: 175.0,
@@ -64,79 +47,24 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   SearchBarWidget(
                     controller: _searchController,
-                    onChanged: _updateSearchQuery,
+                    // 2. Hubungkan onChanged ke fungsi pembaruan state
+                    onChanged: _updateSearchQuery, 
                   ),
+                  
                   Padding(
-                    padding: const EdgeInsets.only(top: 30.0, bottom: 0.0),
+                    padding: const EdgeInsets.only(
+                      top: 30.0,
+                      bottom: 0.0
+                    ),
                     child: ProductGrid(searchQuery: _searchQuery),
                   )
                 ],
-              ),
+              )
             ),
+            // 3. Kirim query pencarian ke ProductGrid
           ],
         ),
       ),
-    );
-  }
-
-  // Header khusus admin dengan tombol menu drawer
-  Widget _buildAdminHeader() {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 250,
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/gambar1.png'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
-        Container(
-          width: double.infinity,
-          height: 250,
-          color: Colors.black.withOpacity(0.3),
-        ),
-        // Tombol menu drawer
-        Positioned(
-          top: 40,
-          left: 10,
-          child: Builder(
-            builder: (context) => IconButton(
-              icon: const Icon(Icons.menu, color: Colors.white, size: 30),
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              },
-            ),
-          ),
-        ),
-        // Text untuk admin
-        Positioned(
-          top: 40,
-          left: 60,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Admin Mode',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 25,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                'Dashboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
