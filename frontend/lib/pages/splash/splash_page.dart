@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../onboarding/onboarding_page.dart';
+import 'package:campgear/layout/buttom_nav.dart';
+import 'package:campgear/pages/admin/admin_nav.dart';
+import 'package:campgear/services/auth_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -33,12 +36,33 @@ class _SplashPageState extends State<SplashPage>
     _controller.forward();
 
     // Navigate setelah delay
-    Future.delayed(const Duration(seconds: 5), () {
+    Future.delayed(const Duration(seconds: 5), _checkLoginStatus);
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final token = await AuthService.getToken();
+    final role = await AuthService.getRole();
+
+    if (!mounted) return;
+
+    if (token != null && role != null) {
+      if (role == 'admin') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminNav()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const BottomNav()),
+        );
+      }
+    } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const OnboardingPage()),
+        MaterialPageRoute(builder: (_) => const OnboardingPage()),
       );
-    });
+    }
   }
 
   @override
@@ -60,10 +84,7 @@ class _SplashPageState extends State<SplashPage>
               builder: (context, child) {
                 return Transform.translate(
                   offset: Offset(0, (1 - _logoAnimation.value) * -200),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    width: 120,
-                  ),
+                  child: Image.asset('assets/images/logo.png', width: 120),
                 );
               },
             ),

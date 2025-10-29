@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String baseUrl = "http://10.0.2.2:8000/api"; 
+  static const String baseUrl = "http://10.0.2.2:8000/api";
   // ⚠️ gunakan 10.0.2.2 kalau pakai emulator Android (bukan localhost)
 
   /// Kirim kode OTP ke email
@@ -18,7 +18,10 @@ class AuthService {
   }
 
   /// Verifikasi OTP
-  static Future<Map<String, dynamic>> verifyCode(String email, String otp) async {
+  static Future<Map<String, dynamic>> verifyCode(
+    String email,
+    String otp,
+  ) async {
     final response = await http.post(
       Uri.parse("$baseUrl/auth/verify-code"),
       headers: {'Content-Type': 'application/json'},
@@ -52,7 +55,10 @@ class AuthService {
   }
 
   /// Login user dan simpan token + user_id
-  static Future<Map<String, dynamic>> login(String email, String password) async {
+  static Future<Map<String, dynamic>> login(
+    String email,
+    String password,
+  ) async {
     final response = await http.post(
       Uri.parse("$baseUrl/login"),
       headers: {'Content-Type': 'application/json'},
@@ -70,6 +76,11 @@ class AuthService {
         await prefs.setInt('user_id', data['user']['id']);
       } else if (data['user'] is int) {
         await prefs.setInt('user_id', data['user']);
+      }
+
+      // simpan role
+      if (data['role'] != null) {
+        await prefs.setString('role', data['role']);
       }
     }
 
@@ -107,6 +118,12 @@ class AuthService {
     // Hapus data lokal di Flutter
     await prefs.remove('token');
     await prefs.remove('user_id');
+  }
+
+  /// Ngambil role login
+  static Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('role');
   }
 
   /// Ambil token yang tersimpan
