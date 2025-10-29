@@ -1,10 +1,5 @@
-import 'package:campgear/pages/auth/sign_in_page.dart';
-import 'package:campgear/pages/auth/sign_up_page.dart';
-import 'package:campgear/pages/auth/welcome_page.dart';
+import 'package:campgear/core/routes/app_routes.dart';
 import 'package:flutter/material.dart';
-import 'pages/splash/splash_page.dart';
-import 'pages/onboarding/onboarding_page.dart';
-import 'layout/buttom_nav.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,14 +19,7 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/splash',
       //home: const SplashPage(),
-      routes: {
-        '/': (context) => const BottomNav(),
-        '/splash': (context) => const SplashPage(),
-        '/onboarding': (context) => const OnboardingPage(),
-        '/welcome': (context) => const WelcomePage(),
-        '/signin': (context) => const SignInPage(),
-        '/signup': (context) => const SignUpPage(),
-      },
+      routes: AppRoutes.routes,
     );
   }
 }

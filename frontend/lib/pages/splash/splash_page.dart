@@ -47,14 +47,16 @@ class _SplashPageState extends State<SplashPage>
 
     if (token != null && role != null) {
       if (role == 'admin') {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+          MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
+          (route) => false,
         );
       } else {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const BottomNav()),
+          MaterialPageRoute(builder: (context) => const BottomNav()),
+          (route) => false,
         );
       }
     } else {
