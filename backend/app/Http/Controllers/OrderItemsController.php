@@ -21,19 +21,29 @@ class OrderItemsController extends Controller
         $query = OrderItems::select(
             'order_items.id',
             'order_items.order_id',
+            'order_items.product_id',
             'products.nama_produk',
             'order_items.jumlah_produk',
-            'order_items.harga'
-        )->join('products', 'products.id', '=', 'order_items.product_id');
+            'order_items.harga',
+            'products.foto',     
+            'orders.status'
+        )
+        ->join('products', 'products.id', '=', 'order_items.product_id')
+        ->join('orders', 'orders.id', '=', 'order_items.order_id');
 
         if ($user->role === 'admin') {
             $items = $query->get();
         } else if ($user->role === 'customer') {
             $customersId = Customers::where('customers.user_id', $user->id)->value('id');
 
+            if (!$customersId) {
+                return new BaseResource(false, 'Data customer tidak ditemukan', null, 404);
+            }
+            
             // hanya order_items yang ada di order miliknya
-            $items = $query->join('orders', 'orders.id', '=', 'order_items.order_id')
-                ->where('orders.customer_id', $customersId)->get();
+            $items = $query
+                ->where('orders.customer_id', $customersId)
+                ->get();
                 
             if ($items->isEmpty()) {
                 return new BaseResource(false, 'Data tidak ditemukan', null, 404);

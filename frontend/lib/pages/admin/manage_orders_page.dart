@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/admin_drawer.dart';
+import '/models/admin_order_model.dart';
+import '/services/order_service.dart';
 
 class ManageOrdersPage extends StatefulWidget {
   const ManageOrdersPage({super.key});
@@ -9,51 +11,82 @@ class ManageOrdersPage extends StatefulWidget {
 }
 
 class _ManageOrdersPageState extends State<ManageOrdersPage> {
-  String _selectedFilter = 'Semua';
+  String _selectedFilter = 'Dibayar';
+  List<AdminOrderModel> _allOrders = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
 
-  List<Map<String, dynamic>> orders = [
-    {
-      'id': 1,
-      'customer_id': 1,
-      'tanggal_pesan': '2025-10-14',
-      'total_harga': 1130000.00,
-      'status': 'dibayar',
-      'items': [
-        {'product': 'Carrier 70L', 'jumlah': 1, 'harga': 850000.00},
-        {'product': 'Kompor Portable', 'jumlah': 1, 'harga': 280000.00},
-      ],
-    },
-    {
-      'id': 2,
-      'customer_id': 2,
-      'tanggal_pesan': '2025-10-15',
-      'total_harga': 300000.00,
-      'status': 'pending',
-      'items': [
-        {'product': 'Tenda Dome', 'jumlah': 1, 'harga': 300000.00},
-      ],
-    },
-    {
-      'id': 3,
-      'customer_id': 1,
-      'tanggal_pesan': '2025-10-15',
-      'total_harga': 725000.00,
-      'status': 'dikirim',
-      'items': [
-        {'product': 'Matras', 'jumlah': 1, 'harga': 725000.00},
-      ],
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrders();
+  }
 
-  // === FILTER ORDER BERDASARKAN STATUS ===
-  List<Map<String, dynamic>> get filteredOrders {
-    if (_selectedFilter == 'Semua') return orders;
-    return orders
-        .where((o) => o['status'] == _selectedFilter.toLowerCase())
+  Future<void> _fetchOrders() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final orders = await OrderService.getAdminOrders();
+      final nonPendingOrders =
+          orders.where((order) => order.status != 'pending').toList();
+
+      setState(() {
+        _allOrders = nonPendingOrders;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
+  Future<void> _updateStatus(AdminOrderModel order, String newStatus) async {
+    try {
+      final result = await OrderService.updateOrderStatus(order.id, newStatus);
+
+      if (result['status'] == true) {
+        setState(() {
+          order.status = newStatus;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Status order #${order.id} diubah menjadi ${newStatus.toUpperCase()}",
+            ),
+            backgroundColor: Colors.green[700],
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        throw Exception(result['message']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Gagal update: ${e.toString().replaceAll('Exception: ', '')}",
+          ),
+          backgroundColor: Colors.red[700],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      _fetchOrders();
+    }
+  }
+
+  List<AdminOrderModel> get filteredOrders {
+    if (_selectedFilter == 'Semua') return _allOrders;
+    return _allOrders
+        .where((o) => o.status == _selectedFilter.toLowerCase())
         .toList();
   }
 
-  // === WARNA STATUS (Soft Style seperti Tailwind) ===
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'dibayar':
@@ -62,6 +95,10 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
         return Colors.orange.withOpacity(0.75);
       case 'dikirim':
         return Colors.blue.withOpacity(0.75);
+      case 'selesai':
+        return Colors.purple.withOpacity(0.75);
+      case 'batal':
+        return Colors.red.withOpacity(0.75);
       default:
         return Colors.grey.withOpacity(0.75);
     }
@@ -79,7 +116,6 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
         backgroundColor: const Color(0xFF5D7F5F),
         foregroundColor: Colors.white,
         actions: [
-          // === FILTER DROPDOWN DI APPBAR ===
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: DropdownButtonHideUnderline(
@@ -89,9 +125,9 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
                 icon: const Icon(Icons.filter_list, color: Colors.white),
                 items: const [
                   DropdownMenuItem(value: 'Semua', child: Text('Semua')),
-                  DropdownMenuItem(value: 'Pending', child: Text('Pending')),
                   DropdownMenuItem(value: 'Dibayar', child: Text('Dibayar')),
                   DropdownMenuItem(value: 'Dikirim', child: Text('Dikirim')),
+                  DropdownMenuItem(value: 'Batal', child: Text('Batal')),
                 ],
                 onChanged: (value) {
                   setState(() => _selectedFilter = value!);
@@ -101,124 +137,143 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
           ),
         ],
       ),
-      body: filteredOrders.isEmpty
-          ? const Center(child: Text("Tidak ada pesanan ditemukan."))
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: filteredOrders.length,
-              itemBuilder: (context, index) {
-                final order = filteredOrders[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 3,
-                  child: ExpansionTile(
-                    tilePadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    title: Text(
-                      "Order #${order['id']}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      "Tanggal: ${order['tanggal_pesan']}\nTotal: Rp ${order['total_harga']}",
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getStatusColor(order['status']),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        order['status'].toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+      body: RefreshIndicator(
+        onRefresh: _fetchOrders,
+        child: _buildBody(),
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_errorMessage.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("Error: $_errorMessage"),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _fetchOrders,
+              child: const Text("Coba Lagi"),
+            )
+          ],
+        ),
+      );
+    }
+
+    final ordersToShow = filteredOrders;
+
+    if (ordersToShow.isEmpty) {
+      // Buat pesan error lebih dinamis
+      if (_selectedFilter == 'Semua' && _allOrders.isEmpty) {
+         return const Center(
+          child: Text("Belum ada pesanan (selain 'pending')."),
+        );
+      }
+      return Center(
+        child: Text("Tidak ada pesanan untuk filter '$_selectedFilter'."),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: ordersToShow.length,
+      itemBuilder: (context, index) {
+        final order = ordersToShow[index];
+
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 3,
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            title: Text(
+              "Order #${order.id}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              "Customer: ${order.customerName}\n"
+              "Tanggal: ${order.formattedDate}\n"
+              "Total: Rp ${order.formattedPrice}",
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _getStatusColor(order.status),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                order.status.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            children: [
+              const Divider(),
+              ...order.items.map<Widget>((item) {
+                return ListTile(
+                  leading: const Icon(Icons.shopping_cart_outlined),
+                  title: Text(item.productName),
+                  subtitle: Text("Jumlah: ${item.jumlah}"),
+                  trailing: Text("Rp ${item.harga.toStringAsFixed(0)}"),
+                );
+              }).toList(),
+              const Divider(),
+
+              if (order.status != 'selesai')
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Divider(),
-                      ...order['items'].map<Widget>((item) {
-                        return ListTile(
-                          leading: const Icon(Icons.shopping_cart_outlined),
-                          title: Text(item['product']),
-                          subtitle: Text("Jumlah: ${item['jumlah']}"),
-                          trailing: Text("Rp ${item['harga']}"),
-                        );
-                      }).toList(),
-                      const Divider(),
-                      // === UBAH STATUS DROPDOWN ===
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              "Ubah Status:",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            DropdownButton<String>(
-                              value: order['status'],
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'pending',
-                                  child: Text('Pending'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'dibayar',
-                                  child: Text('Dibayar'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'dikirim',
-                                  child: Text('Dikirim'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  order['status'] = value!;
-                                });
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      "Status order #${order['id']} diubah menjadi ${value!.toUpperCase()}",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.green[700],
-                                      ),
-                                    ),
-                                    backgroundColor: Colors.green[50],
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
+                      const Text(
+                        "Ubah Status:",
+                        style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 10),
+                      DropdownButton<String>(
+                        value: order.status,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'dibayar',
+                            child: Text('Dibayar'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'dikirim',
+                            child: Text('Dikirim'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'batal',
+                            child: Text('Batal'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          if (value != null && value != order.status) {
+                            _updateStatus(order, value);
+                          }
+                        },
+                      ),
                     ],
                   ),
-                );
-              },
-            ),
+                ),
+
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
     );
   }
 }

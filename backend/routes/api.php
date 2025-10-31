@@ -9,6 +9,8 @@ use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
 
 // ==================== AUTH ROUTES ====================
 Route::post('/auth/send-code', [AuthController::class, 'sendVerificationCode']);
@@ -31,6 +33,7 @@ Route::middleware(['auth:sanctum', 'peran:admin'])->group(function () {
 
     // Orders
     Route::delete('/orders/{id}', [OrdersController::class, 'destroy']);
+    Route::patch('/admin/orders/{id}/status', [OrdersController::class, 'updateStatus']);
 
     // Order Items
     Route::post('/order-items', [OrderItemsController::class, 'store']);
@@ -56,6 +59,9 @@ Route::middleware(['auth:sanctum', 'peran:customer'])->group(function () {
     // Orders
     Route::post('/orders', [OrdersController::class, 'store']);
 
+    // My Orders 
+    Route::patch('/my-orders/{order}/receive', [OrdersController::class, 'receiveOrder']);
+
     // Order Items
     Route::post('/order-items', [OrderItemsController::class, 'store']);
 
@@ -64,6 +70,15 @@ Route::middleware(['auth:sanctum', 'peran:customer'])->group(function () {
 
     // Customers (update profil sendiri)
     Route::put('/customers/{id}', [CustomersController::class, 'update']);
+    
+    // Cart
+    Route::get('/cart', [CartController::class, 'getCart']);
+    Route::post('/cart', [CartController::class, 'addToCart']);
+    Route::put('/cart/{orderItemId}', [CartController::class, 'updateCartItem']);
+    Route::delete('/cart/{orderItemId}', [CartController::class, 'removeCartItem']);
+
+    // Checkout
+    Route::post('/checkout', [CheckoutController::class, 'processCheckout']);
 });
 
 // ==================== ROUTES ADMIN & CUSTOMER (GET SAJA) ====================

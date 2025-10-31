@@ -6,6 +6,8 @@ use App\Http\Resources\BaseResource;
 use App\Models\Customers;
 use Illuminate\Http\Request;
 use App\Models\Orders;
+use App\Models\OrderItems; 
+use App\Models\Products;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,7 +27,20 @@ class OrdersController extends Controller
             )->join('customers', 'customers.id', '=', 'orders.customer_id');
 
         if ($user->role === 'admin') {
-            $orders = $query->get();
+            // Kita gunakan Eager Loading untuk mengambil relasi
+            $orders = Orders::with([
+                'customer:id,name', 
+                'orderItems', 
+                'orderItems.product:id,nama_produk' 
+            ])
+            ->orderBy('tanggal_pesan', 'desc') 
+            ->get();
+
+            if ($orders->isEmpty()) {
+                return new BaseResource(true, 'Belum ada data pesanan', null);
+            }
+
+            return new BaseResource(true, 'List Data Orders (Admin)', $orders);
         } else if ($user->role === 'customer') {
             $customersId = Customers::where('customers.user_id', $user->id)->value('id');
             
@@ -152,5 +167,75 @@ class OrdersController extends Controller
         $orders->delete();
 
         return new BaseResource(true, 'Data Orders Berhasil dihapus', $orders, 200);
+    }
+
+    /**
+     * Update status pesanan (khusus admin).
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        // 1. Cek apakah user adalah admin
+        if (Auth::user()->role !== 'admin') {
+            return new BaseResource(false, 'Hanya admin yang dapat mengakses', null, 403);
+        }
+
+        // 2. Validasi input
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,dibayar,dikirim,selesai,batal',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // 3. Cari dan update order
+        $order = Orders::find($id);
+        if (!$order) {
+            return new BaseResource(false, 'Data order tidak ditemukan', null, 404);
+        }
+
+        $order->status = $request->status;
+        $order->save();
+
+        return new BaseResource(true, 'Status order berhasil diupdate', $order, 200);
+    }
+
+    /**
+     * Konfirmasi pesanan diterima (khusus customer).
+     */
+    public function receiveOrder(Request $request, string $id)
+    {
+        // 1. Dapatkan user & customer ID
+        $user = Auth::user();
+        if ($user->role !== 'customer') {
+            return new BaseResource(false, 'Hanya customer yang dapat melakukan ini', null, 403);
+        }
+
+        $customersId = Customers::where('customers.user_id', $user->id)->value('id');
+        if (!$customersId) {
+            return new BaseResource(false, 'Data customer tidak ditemukan', null, 404);
+        }
+
+        // 2. Cari order
+        $order = Orders::find($id);
+        if (!$order) {
+            return new BaseResource(false, 'Data order tidak ditemukan', null, 404);
+        }
+
+        // 3. Validasi Keamanan: Pastikan order ini milik user
+        if ($order->customer_id !== $customersId) {
+            return new BaseResource(false, 'Anda tidak memiliki akses ke order ini', null, 403);
+        }
+
+        // 4. Validasi Status: Pastikan status 'dikirim'
+        if ($order->status !== 'dikirim') {
+            return new BaseResource(false, 'Pesanan ini tidak dalam status "dikirim"', null, 422);
+        }
+
+        // 5. Update status
+        $order->status = 'selesai';
+        $order->save();
+
+        return new BaseResource(true, 'Status order berhasil diupdate ke "Selesai"', $order, 200);
     }
 }

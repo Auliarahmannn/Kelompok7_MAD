@@ -4,8 +4,9 @@ import 'package:campgear/models/user_model.dart';
 
 class ProfileUpdatePage extends StatefulWidget {
   final UserModel user;
+  final bool autoFocusAddress;
 
-  const ProfileUpdatePage({super.key, required this.user});
+  const ProfileUpdatePage({super.key, required this.user, this.autoFocusAddress = false,});
 
   @override
   State<ProfileUpdatePage> createState() => _ProfileUpdatePageState();
@@ -19,6 +20,8 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
   late TextEditingController _addressController;
   bool isLoading = false;
 
+  final FocusNode _addressFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -26,6 +29,14 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone ?? '');
     _addressController = TextEditingController(text: widget.user.address ?? '');
+
+    if (widget.autoFocusAddress) {
+      // Kita perlu delay sedikit sampai frame selesai di-render
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Minta fokus ke input alamat
+        FocusScope.of(context).requestFocus(_addressFocusNode);
+      });
+    }
   }
 
   @override
@@ -34,6 +45,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _addressFocusNode.dispose(); 
     super.dispose();
   }
 
@@ -194,6 +206,7 @@ class _ProfileUpdatePageState extends State<ProfileUpdatePage> {
               // Alamat
               TextFormField(
                 controller: _addressController,
+                focusNode: _addressFocusNode,
                 decoration: InputDecoration(
                   labelText: 'Alamat',
                   prefixIcon: const Icon(Icons.location_on),
