@@ -111,6 +111,7 @@ class _ProductGridState extends State<ProductGrid> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProductDetailPage(
+                        productId: item.id,
                         nama: item.namaProduk,
                         deskripsi: item.deskripsi,
                         stok: item.stok,

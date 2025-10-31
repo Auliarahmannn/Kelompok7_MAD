@@ -1,25 +1,254 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '/widgets/custom_button.dart';
-import 'payment_success_dialog.dart';
+import 'package:intl/intl.dart';
 
-class PaymentPage extends StatelessWidget {
-  final int totalPrice;
-  
-  const PaymentPage({Key? key, required this.totalPrice}) : super(key: key);
+import '/models/cart_model.dart';
+import '/models/user_model.dart';
+import '/models/payment_method_model.dart';
+import '/services/user_service.dart';
+import '/services/payment_method_service.dart';
+import '/widgets/custom_button.dart';
+import 'payment_detail_page.dart';
+import '../../pages/profile/profile_update.dart';
+
+// --- Model untuk Opsi Pengiriman ---
+class ShippingOption {
+  final String name;
+  final int price;
+  final String eta; 
+  final String description;
+
+  ShippingOption({
+    required this.name,
+    required this.price,
+    required this.eta,
+    required this.description,
+  });
+}
+
+// --- Halaman Placeholder untuk Edit Alamat ---
+// TODO: Pindahkan ini ke file baru (misal: edit_address_page.dart)
+class EditAddressPage extends StatelessWidget {
+  final UserModel user;
+  const EditAddressPage({Key? key, required this.user}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(title: Text('Edit Alamat')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Halaman untuk mengedit alamat ${user.name}'),
+            SizedBox(height: 20),
+            CustomButton(
+              text: 'Simpan',
+              onPressed: () {
+                // Kirim 'true' untuk menandakan ada perubahan
+                Navigator.pop(context, true); 
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+// ------------------------------------------
+
+class PaymentPage extends StatefulWidget {
+  final int totalPrice;
+  final List<CartItemModel> itemsToCheckout;
+
+  const PaymentPage({
+    Key? key,
+    required this.totalPrice,
+    required this.itemsToCheckout,
+  }) : super(key: key);
+
+  @override
+  State<PaymentPage> createState() => _PaymentPageState();
+}
+
+class _PaymentPageState extends State<PaymentPage> {
+  late Future<List<PaymentMethodModel>> _paymentMethodsFuture;
+  late Future<UserModel> _userFuture;
+  int? _selectedPaymentMethodId;
+  PaymentMethodModel? _selectedPaymentMethod;
+
+  // --- State Baru ---
+  bool _useProtection = true;
+  static const int protectionFee = 2700; // Biaya proteksi
+  String _sellerNote = ''; // Catatan untuk penjual
+
+  final List<ShippingOption> _shippingOptions = [
+    ShippingOption(
+      name: 'Hemat Kargo',
+      price: 0,
+      eta: 'Garansi tiba 21 - 24 Okt',
+      description: 'Kamu mendapatkan gratis ongkir!',
+    ),
+    ShippingOption(
+      name: 'Reguler',
+      price: 15000,
+      eta: 'Tiba 20 - 22 Okt',
+      description: 'Pengiriman reguler oleh kurir.',
+    ),
+    ShippingOption(
+      name: 'Next Day',
+      price: 25000,
+      eta: 'Tiba 19 Okt',
+      description: 'Pengiriman super cepat.',
+    ),
+  ];
+  late ShippingOption _selectedShipping;
+  // --------------------
+
+  @override
+  void initState() {
+    super.initState();
+    _paymentMethodsFuture = PaymentMethodService.getPaymentMethods();
+    _userFuture = UserService.getProfile();
+    _selectedShipping = _shippingOptions[0]; // Set default pengiriman
+  }
+
+  String _formatPrice(int price) {
+    if (price == 0) return 'Gratis'; // Tampilkan 'Gratis' jika harga 0
+    return NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp',
+      decimalDigits: 0,
+    ).format(price).replaceAll(',', '.');
+  }
+
+  // --- Fungsi Baru: Edit Alamat ---
+  Future<void> _editAddress(UserModel currentUser) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        // Ganti ke ProfileUpdatePage dan tambahkan autoFocusAddress
+        builder: (context) => ProfileUpdatePage(
+          user: currentUser,
+          autoFocusAddress: true, 
+        ),
+      ),
+    );
+
+    // Jika hasil pop adalah 'true' (ada perubahan), refresh data user
+    if (result == true) {
+      setState(() {
+        _userFuture = UserService.getProfile();
+      });
+    }
+  }
+
+  // --- Fungsi Baru: Tampilkan Dialog Catatan ---
+  Future<void> _showSellerNoteDialog() async {
+    final TextEditingController noteController =
+        TextEditingController(text: _sellerNote);
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Pesan untuk Penjual'),
+          content: TextField(
+            controller: noteController,
+            decoration: InputDecoration(
+              hintText: 'Tinggalkan catatan (opsional)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _sellerNote = noteController.text;
+                });
+                Navigator.pop(context);
+              },
+              child: Text('Simpan'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- Fungsi Baru: Tampilkan Modal Opsi Pengiriman ---
+  Future<void> _showShippingOptions() async {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        // Gunakan StatefulBuilder agar modal bisa update
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter modalSetState) {
+            return Container(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Pilih Opsi Pengiriman',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  ..._shippingOptions.map((option) { // Loop opsi
+                    return RadioListTile<ShippingOption>(
+                      title: Text(option.name),
+                      subtitle: Text(
+                          '${option.eta} (${_formatPrice(option.price)})'),
+                      value: option,
+                      groupValue: _selectedShipping,
+                      onChanged: (value) {
+                        setState(() { // Update state utama
+                          _selectedShipping = value!;
+                        });
+                        modalSetState(() {}); // Update modal
+                        Navigator.pop(context); // Tutup modal
+                      },
+                      activeColor: Color(0xFF5D7F5F),
+                    );
+                  }).toList(),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // --- Hitung Total Harga Dinamis ---
+    int finalTotal = widget.totalPrice;
+    if (_useProtection) {
+      finalTotal += protectionFee;
+    }
+    finalTotal += _selectedShipping.price;
+    // ---------------------------------
+
+    return Scaffold(
       body: Stack(
         children: [
-          // Background header
+          // Background header (tetap sama)
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: 150,
             child: Container(
+              // ... (styling background)
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: NetworkImage(
@@ -42,15 +271,16 @@ class PaymentPage extends StatelessWidget {
               ),
             ),
           ),
-          
+
           SafeArea(
             child: Column(
               children: [
-                // Header
+                // Header (tetap sama)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
-                    children: [
+                    // ... (styling header)
+                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
                         child: Container(
@@ -77,9 +307,9 @@ class PaymentPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Content
                 Expanded(
                   child: Container(
@@ -95,110 +325,108 @@ class PaymentPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Address Section
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Sunrise ( sunrise07@gmail.com)',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Jalan situ Indah No. 35b, RT.6/RW.10,Cimanggis, Kota Depok,Jawa Barat,Indonesia,ID 16451',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(Icons.chevron_right, color: Colors.grey[600]),
-                              ],
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // Product Section
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 80,
-                                  height: 80,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    color: Colors.grey[100],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      'https://images.unsplash.com/photo-1622260614153-03223fb72052?w=400',
-                                      fit: BoxFit.cover,
+                          // ### ALAMAT DINAMIS (Bisa Diklik) ###
+                          GestureDetector( // <-- DIBUNGKUS GESTUREDETECTOR
+                            onTap: () {
+                              // Cek jika data user sudah ada
+                              _userFuture.then((user) {
+                                _editAddress(user);
+                              }).catchError((e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Gagal memuat data user')),
+                                );
+                              });
+                            },
+                            child: FutureBuilder<UserModel>(
+                              future: _userFuture,
+                              builder: (context, snapshot) {
+                                // ... (Tampilan loading dan error tetap sama)
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
+                                    child: Center(child: CircularProgressIndicator()),
+                                  );
+                                }
+                                if (snapshot.hasError || !snapshot.hasData) {
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text('Gagal memuat data alamat.'),
+                                  );
+                                }
+
+                                // Tampilan jika berhasil
+                                final user = snapshot.data!;
+                                return Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        'Tenda Decathion Eiger | Muat Hingga 5 Orang',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black87,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${user.name} (${user.email})',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              user.address ??
+                                                  'Alamat belum diatur.',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Rp.180.000',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFFD4A574),
-                                        ),
-                                      ),
+                                      Icon(Icons.chevron_right,
+                                          color: Colors.grey[600]),
                                     ],
                                   ),
-                                ),
-                                Text(
-                                  'x1',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           ),
-                          
+
                           const SizedBox(height: 12),
-                          
-                          // Insurance Section
+
+                          // ### PRODUK DINAMIS ###
                           Container(
                             padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: widget.itemsToCheckout.map((item) {
+                                return _buildProductItem(item);
+                              }).toList(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ### FITUR PROTEKSI ###
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0), // Padding dikurangi
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
@@ -206,13 +434,18 @@ class PaymentPage extends StatelessWidget {
                             child: Row(
                               children: [
                                 Checkbox(
-                                  value: true,
-                                  onChanged: (value) {},
+                                  value: _useProtection,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _useProtection = value ?? false;
+                                    });
+                                  },
                                   activeColor: Color(0xFF5D7F5F),
                                 ),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Proteksi Kerusakan +',
@@ -222,70 +455,46 @@ class PaymentPage extends StatelessWidget {
                                           color: Colors.black87,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      RichText(
-                                        text: TextSpan(
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.black54,
-                                          ),
-                                          children: [
-                                            TextSpan(
-                                              text: 'Melindungi produkmu dari kerusakan/kerugian total selama 6 bulan. ',
-                                            ),
-                                            TextSpan(
-                                              text: 'Pelajari',
-                                              style: TextStyle(
-                                                color: Color(0xFF5D7F5F),
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                      // ... (Deskripsi proteksi)
                                     ],
                                   ),
                                 ),
                                 Text(
-                                  'Rp.2.700',
+                                  _formatPrice(protectionFee), // Harga dinamis
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: Colors.black87,
                                   ),
                                 ),
+                                SizedBox(width: 8) // Beri jarak
                               ],
                             ),
                           ),
-                          
+
                           const SizedBox(height: 12),
-                          
-                          // Voucher Section
-                          _buildClickableRow(
-                            'Voucher Toko',
-                            'Gunakan/Masukan Kode',
-                            onTap: () {},
-                          ),
-                          
-                          const SizedBox(height: 8),
-                          
+
+                          // ### FITUR PESAN & OPSI (Fungsional) ###
                           _buildClickableRow(
                             'Pesan Untuk Penjual',
-                            'Tinggalkan Pesan',
-                            onTap: () {},
+                            // Tampilkan pesan jika ada, jika tidak, tampilkan placeholder
+                            _sellerNote.isNotEmpty ? _sellerNote : 'Tinggalkan Pesan',
+                            onTap: _showSellerNoteDialog, // Panggil dialog
+                            maxLines: 1, // Batasi 1 baris
                           ),
                           
                           const SizedBox(height: 8),
                           
                           _buildClickableRow(
                             'Opsi Pengiriman',
-                            'Lihat Semua',
-                            onTap: () {},
+                            // Tampilkan opsi terpilih
+                            '${_selectedShipping.name} (${_formatPrice(_selectedShipping.price)})',
+                            onTap: _showShippingOptions, // Panggil modal
                           ),
                           
                           const SizedBox(height: 12),
-                          
-                          // Shipping Section
+
+                          // ### INFO PENGIRIMAN (Dinamis) ###
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -296,7 +505,7 @@ class PaymentPage extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Hemat Kargo',
+                                  _selectedShipping.name, // Nama dari state
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -306,11 +515,12 @@ class PaymentPage extends StatelessWidget {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Icon(Icons.local_shipping, size: 18, color: Colors.grey[600]),
+                                    Icon(Icons.local_shipping,
+                                        size: 18, color: Colors.grey[600]),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
-                                        'Garansi tiba 21 - 24 Okt',
+                                        _selectedShipping.eta, // ETA dari state
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.black54,
@@ -318,59 +528,101 @@ class PaymentPage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      'Rp.0',
+                                      _formatPrice(_selectedShipping.price), // Harga dari state
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.black87,
-                                        decoration: TextDecoration.lineThrough,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Voucher s/d Rp10.000 jika pesanan belum tiba 24 Okt 2025.',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Kamu mendapatkan gratis ongkir !',
+                                  _selectedShipping.description, // Deskripsi dari state
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Color(0xFF5D7F5F),
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // ### METODE PEMBAYARAN DINAMIS ###
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Metode Pembayaran',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
+                                  ),
+                                ),
                                 const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Icon(Icons.shopping_bag, size: 18, color: Colors.grey[600]),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        'Garansi tiba 21 Okt Dengan Next Day',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF5D7F5F),
-                                        ),
-                                      ),
-                                    ),
-                                    Icon(Icons.chevron_right, color: Colors.grey[600], size: 20),
-                                  ],
+                                FutureBuilder<List<PaymentMethodModel>>(
+                                  future: _paymentMethodsFuture,
+                                  builder: (context, snapshot) {
+                                    // ... (Kode FutureBuilder tetap sama)
+                                     if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return Center(child: CircularProgressIndicator());
+                                    }
+                                    if (snapshot.hasError) {
+                                      print(snapshot.error); 
+                                      return Center(child: Text('Gagal memuat metode. Cek koneksi & API.'));
+                                    }
+                                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                      return Center(child: Text('Metode pembayaran tidak tersedia.'));
+                                    }
+
+                                    final methods = snapshot.data!;
+                                    
+                                    if (_selectedPaymentMethodId == null && methods.isNotEmpty) {
+                                      _selectedPaymentMethodId = methods.first.id;
+                                      _selectedPaymentMethod = methods.first;
+                                    }
+
+                                    return Column(
+                                      children: methods.map((method) {
+                                        return RadioListTile<int>(
+                                          title: Text(method.metode),
+                                          subtitle: Text(method.deskripsi ?? ''),
+                                          value: method.id,
+                                          groupValue: _selectedPaymentMethodId,
+                                          onChanged: (value) {
+                                            setState(() {
+                                              _selectedPaymentMethodId = value;
+                                              _selectedPaymentMethod = method;
+                                            });
+                                          },
+                                          activeColor: Color(0xFF5D7F5F),
+                                          controlAffinity: ListTileControlAffinity.trailing,
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
                           ),
+                          const SizedBox(height: 12),
                         ],
                       ),
                     ),
                   ),
                 ),
-                
+
                 // Bottom checkout section
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -398,7 +650,8 @@ class PaymentPage extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Rp. ${_formatPrice(totalPrice)}',
+                            // Gunakan finalTotal yang sudah dihitung
+                            _formatPrice(finalTotal), 
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -411,10 +664,27 @@ class PaymentPage extends StatelessWidget {
                       CustomButton(
                         text: 'Check out',
                         onPressed: () {
+                          if (_selectedPaymentMethodId == null ||
+                              _selectedPaymentMethod == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text(
+                                      'Silakan pilih metode pembayaran dahulu.')),
+                            );
+                            return;
+                          }
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => PaymentDetailPage(totalPrice: totalPrice),
+                              builder: (context) => PaymentDetailPage(
+                                // Kirim total harga yang sudah final
+                                totalPrice: finalTotal, 
+                                itemsToCheckout: widget.itemsToCheckout,
+                                selectedPaymentMethod: _selectedPaymentMethod!,
+                                // TODO: Kirim juga _sellerNote dan _selectedShipping
+                                // jika PaymentDetailPage membutuhkannya
+                              ),
                             ),
                           );
                         },
@@ -432,7 +702,74 @@ class PaymentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildClickableRow(String title, String subtitle, {required VoidCallback onTap}) {
+  // Widget helper untuk build item produk
+  Widget _buildProductItem(CartItemModel item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        // ... (Kode _buildProductItem tetap sama)
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[100],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                item.assetImagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                  );
+                },
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName, 
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.formattedPrice,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD4A574),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            'x${item.quantity}',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget helper _buildClickableRow
+  Widget _buildClickableRow(String title, String subtitle,
+      {required VoidCallback onTap, int maxLines = 1}) { // Tambah maxLines
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -452,429 +789,30 @@ class PaymentPage extends StatelessWidget {
                 color: Colors.black87,
               ),
             ),
-            Row(
-              children: [
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
+            Expanded( // Tambahkan Expanded
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded( // Tambahkan Expanded
+                    child: Text(
+                      subtitle,
+                      textAlign: TextAlign.end,
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[500],
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.chevron_right, color: Colors.grey[600], size: 20),
-              ],
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right, color: Colors.grey[600], size: 20),
+                ],
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
-  }
-}
-
-// Payment Detail Page (Second Screen)
-class PaymentDetailPage extends StatelessWidget {
-  final int totalPrice;
-  
-  const PaymentDetailPage({Key? key, required this.totalPrice}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Background header
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            child: Container(
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800',
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.5),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          
-          SafeArea(
-            child: Column(
-              children: [
-                // Header
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        'Pembayaran',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 20),
-                
-                // Content
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFF5F5F5),
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                    ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Total Payment
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Total Pembayaran',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                Text(
-                                  'Rp.${_formatPrice(totalPrice)}',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFD4A574),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // Countdown
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Bayar dalam',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    Text(
-                                      '23 jam 59 menit 40 detik',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.orange[700],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Jatuh tempo',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    Text(
-                                      '19 Oktober 2025\n19:45',
-                                      textAlign: TextAlign.right,
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // OVO Payment Method
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4F3495),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        'ovo',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'ovo',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No. Rek/Virtual Account',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '781 8239 8765 0927',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFFD4A574),
-                                        letterSpacing: 1,
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Clipboard.setData(const ClipboardData(text: '781823987650927'));
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Nomor rekening disalin')),
-                                        );
-                                      },
-                                      child: const Text(
-                                        'Salin',
-                                        style: TextStyle(
-                                          color: Color(0xFF5D7F5F),
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Proses verifikasi kurang dari 10 menit setelah pembayaran berhasil',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Menerima transfer dari semua bank. Pastikan memilih OVO sebagai E-wallet tujuan',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          const SizedBox(height: 12),
-                          
-                          // Transfer Bank Instructions
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Theme(
-                              data: ThemeData(dividerColor: Colors.transparent),
-                              child: ExpansionTile(
-                                title: const Text(
-                                  'Transfer Bank',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                trailing: const Icon(Icons.keyboard_arrow_down),
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(16),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        _buildStep('1', 'Klik Buka Aplikasi OVO dan login ke akun OVO'),
-                                        const SizedBox(height: 12),
-                                        _buildStep('2', 'Masuk ke halaman Tranfer Virtual Account untuk memeriksa Virtual Account Number 781 8239 8765 0927'),
-                                        const SizedBox(height: 12),
-                                        _buildStep('3', 'Pastikan jumlah pembayaran sudah benar dan klik selanjutnya'),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                
-                // Bottom button
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: CustomButton(
-                    text: 'Buka Aplikasi OVO',
-                    onPressed: () => _showSuccessDialog(context),
-                    icon: Icons.account_balance_wallet,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStep(String number, String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(14),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            number,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showSuccessDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const PaymentSuccessDialog(),
-    );
-  }
-
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
   }
 }
