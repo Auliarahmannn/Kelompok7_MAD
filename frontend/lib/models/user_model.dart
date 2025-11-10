@@ -29,7 +29,7 @@ class UserModel {
       role: json['role'] ?? 'customer',
       phone: json['phone'],
       address: json['address'],
-      customerId: json['customer_id'],
+      customerId: json['user_id'] ?? json['customer_id'],
       createdAt: json['created_at'],
       updatedAt: json['updated_at'],
     );

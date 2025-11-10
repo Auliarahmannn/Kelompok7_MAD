@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:campgear/models/product_model.dart';
 import 'package:campgear/services/product_service.dart';
 import '../../widgets/admin_drawer.dart';
@@ -13,6 +14,12 @@ class ManageProductPage extends StatefulWidget {
 class _ManageProductPageState extends State<ManageProductPage> {
   List<Products> produk = [];
   bool isLoading = true;
+
+  final formatRupiah = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -177,44 +184,103 @@ class _ManageProductPageState extends State<ManageProductPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       drawer: const AdminDrawer(),
-      appBar: AppBar(title: const Text("Kelola Produk")),
+      appBar: AppBar(
+        title: const Text(
+          "Kelola Produk",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF5D7F5F),
+        foregroundColor: Colors.white,
+      ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: fetchProducts,
               child: ListView.builder(
                 itemCount: produk.length,
+                padding: const EdgeInsets.all(12),
                 itemBuilder: (context, index) {
                   final item = produk[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                    color: Colors.white,
+                    elevation: 4,
+                    shadowColor: Colors.black26,
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundImage: item.foto.isNotEmpty
-                            ? AssetImage('assets/images/${item.foto}')
-                            : null,
-                        backgroundColor: Colors.grey[200],
-                        child: item.foto.isEmpty
-                            ? const Icon(Icons.image_not_supported, size: 50)
-                            : null,
-                      ),
-                      title: Text(item.namaProduk),
-                      subtitle: Text("Rp${item.harga} | Stok: ${item.stok}"),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.blue),
-                            onPressed: () =>
-                                _showProductDialog(existingProduct: item),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: item.foto.isNotEmpty
+                                ? Image.asset(
+                                    'assets/images/${item.foto}',
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 100,
+                                    height: 100,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.image_not_supported,
+                                        size: 50),
+                                  ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => _hapusProduk(item.id),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.namaProduk,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  item.deskripsi,
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  formatRupiah.format(item.harga),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  "Stok: ${item.stok}",
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Column(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.blue, size: 24),
+                                onPressed: () =>
+                                    _showProductDialog(existingProduct: item),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red, size: 24),
+                                onPressed: () => _hapusProduk(item.id),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -224,8 +290,8 @@ class _ManageProductPageState extends State<ManageProductPage> {
               ),
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green[700],
-        child: const Icon(Icons.add),
+        backgroundColor: const Color(0xFF5D7F5F),
+        child: const Icon(Icons.add, size: 28),
         onPressed: () => _showProductDialog(),
       ),
     );

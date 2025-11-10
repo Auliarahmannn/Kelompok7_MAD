@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "71312018929",
+    "project_id": "campgear-d8aba",
+    "storage_bucket": "campgear-d8aba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71312018929:android:5346f622cbfd75bc160850",
+        "android_client_info": {
+          "package_name": "com.example.campgear"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXDxzM7mCnMuNe-BvypUYbFbytQNIpiQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

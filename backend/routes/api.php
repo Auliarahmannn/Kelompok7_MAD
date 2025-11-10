@@ -51,6 +51,9 @@ Route::middleware(['auth:sanctum', 'peran:admin'])->group(function () {
 
     // Customers
     Route::delete('/customers/{id}', [CustomersController::class, 'destroy']);
+
+    // Statistics
+    Route::get('/admin/statistics/{filter}', [OrdersController::class, 'getStatistics']);
 });
 
 // ==================== CUSTOMER ROUTES ====================

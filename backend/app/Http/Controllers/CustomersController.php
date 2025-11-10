@@ -24,7 +24,8 @@ class CustomersController extends Controller
                 'customers.name',
                 'customers.email',
                 'customers.phone',
-                'customers.address'
+                'customers.address',
+                'customers.user_id'
             )->get();
         } else if ($user->role === 'customer') {
             // personel hanya bisa lihat data miliknya sendiri

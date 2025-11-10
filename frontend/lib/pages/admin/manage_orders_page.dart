@@ -107,6 +107,7 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       drawer: const AdminDrawer(),
       appBar: AppBar(
         title: const Text(
@@ -187,11 +188,12 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
         final order = ordersToShow[index];
 
         return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
+          color: Colors.green.shade50,
+          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          elevation: 3,
+          elevation: 4,
           child: ExpansionTile(
             tilePadding: const EdgeInsets.symmetric(
               horizontal: 16,

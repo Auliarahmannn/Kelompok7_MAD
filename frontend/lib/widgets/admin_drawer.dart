@@ -31,7 +31,7 @@ class AdminDrawer extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: const [
                 Icon(
-                  Icons.admin_panel_settings_rounded,
+                  Icons.account_circle,
                   color: Colors.white,
                   size: 50,
                 ),
