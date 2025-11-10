@@ -190,4 +190,41 @@ class UserService {
       rethrow;
     }
   }
+  
+  // GET - Ambil semua customer (untuk admin)
+  static Future<List<UserModel>> getAllCustomersForAdmin() async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('Token tidak ditemukan. Silakan login kembali.');
+      }
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/customers'), 
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+
+        if (jsonResponse['status'] == true && jsonResponse['data'] != null) {
+          // Ubah list JSON menjadi List<UserModel>
+          List<dynamic> dataList = jsonResponse['data'];
+          return dataList.map((json) => UserModel.fromJson(json)).toList();
+        } else {
+          // Jika status true tapi data null (kosong)
+          if (jsonResponse['status'] == true) return [];
+          throw Exception(jsonResponse['message'] ?? 'Gagal memuat data customer');
+        }
+      } else {
+        throw Exception('Gagal memuat data customer: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error getAllCustomersForAdmin: $e');
+      rethrow;
+    }
+  }
 }

@@ -6,10 +6,9 @@ use App\Http\Resources\BaseResource;
 use App\Models\Customers;
 use Illuminate\Http\Request;
 use App\Models\Orders;
-use App\Models\OrderItems; 
-use App\Models\Products;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OrdersController extends Controller
 {
@@ -237,5 +236,97 @@ class OrdersController extends Controller
         $order->save();
 
         return new BaseResource(true, 'Status order berhasil diupdate ke "Selesai"', $order, 200);
+    }
+
+    /**
+     * Dapatkan statistik pendapatan (khusus admin) dengan filter.
+     */
+    public function getStatistics(string $filter = 'harian')
+    {
+        try {
+            // --- 1. MEMBUAT QUERY DASAR UNTUK FILTER WAKTU ---
+            $baseQuery = Orders::query();
+            switch ($filter) {
+                case 'harian':
+                    $baseQuery->whereDate('tanggal_pesan', now()->today());
+                    break;
+                case 'bulanan':
+                    $baseQuery->whereMonth('tanggal_pesan', now()->month)
+                              ->whereYear('tanggal_pesan', now()->year);
+                    break;
+                case 'tahunan':
+                    $baseQuery->whereYear('tanggal_pesan', now()->year);
+                    break;
+            }
+
+            // --- 2. PERHITUNGAN UNTUK KARTU STATISTIK (SAMA SEPERTI SEBELUMNYA) ---
+            
+            // Clone query dasar agar bisa dipakai beberapa kali
+            $statsQuery = clone $baseQuery;
+            $itemsQuery = clone $baseQuery;
+            $pendingQuery = clone $baseQuery;
+
+            $stats = $statsQuery->select(
+                DB::raw("SUM(CASE WHEN status = 'selesai' THEN total_harga ELSE 0 END) as total_pendapatan_selesai"),
+                DB::raw("COUNT(CASE WHEN status = 'selesai' THEN 1 END) as jumlah_pesanan_selesai"),
+                DB::raw("COUNT(CASE WHEN status IN ('dibayar', 'dikirim') THEN 1 END) as jumlah_pesanan_diproses"),
+                DB::raw("COUNT(CASE WHEN status = 'batal' THEN 1 END) as jumlah_pesanan_batal")
+            )->first();
+
+            $totalBarang = $itemsQuery->where('status', 'selesai')
+                                     ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+                                     ->sum('order_items.jumlah_produk');
+
+            $pendingRevenue = $pendingQuery->whereIn('status', ['dibayar', 'dikirim'])->sum('total_harga');
+
+            
+            // --- 3. PERHITUNGAN BARU UNTUK DATA GRAFIK ---
+
+            $chartQuery = clone $baseQuery; // Ambil query dasar lagi
+            $chartQuery->where('status', 'selesai'); // Grafik HANYA menghitung pendapatan 'selesai'
+            
+            // Tentukan cara mengelompokkan data (per jam, hari, atau bulan)
+            switch ($filter) {
+                case 'harian':
+                    $chartQuery->select(
+                        DB::raw("HOUR(tanggal_pesan) as label"), 
+                        DB::raw("SUM(total_harga) as total")
+                    )->groupBy('label')->orderBy('label', 'asc');
+                    break;
+                case 'bulanan':
+                    $chartQuery->select(
+                        DB::raw("DAY(tanggal_pesan) as label"),
+                        DB::raw("SUM(total_harga) as total")
+                    )->groupBy('label')->orderBy('label', 'asc');
+                    break;
+                case 'tahunan':
+                    $chartQuery->select(
+                        DB::raw("MONTH(tanggal_pesan) as label"),
+                        DB::raw("SUM(total_harga) as total")
+                    )->groupBy('label')->orderBy('label', 'asc');
+                    break;
+            }
+
+            $chartData = $chartQuery->get(); // Ambil data grafiknya
+
+            // --- 4. GABUNGKAN SEMUA DATA UNTUK DIKIRIM ---
+            $data = [
+                // Data untuk Kartu
+                'pendapatan_selesai' => (float) $stats->total_pendapatan_selesai ?? 0,
+                'pesanan_selesai' => (int) $stats->jumlah_pesanan_selesai ?? 0,
+                'barang_terjual' => (int) $totalBarang ?? 0,
+                'pesanan_diproses' => (int) $stats->jumlah_pesanan_diproses ?? 0,
+                'pesanan_dibatalkan' => (int) $stats->jumlah_pesanan_batal ?? 0,
+                'pendapatan_diproses' => (float) $pendingRevenue ?? 0,
+
+                // Data BARU untuk Grafik
+                'chart_data' => $chartData,
+            ];
+
+            return new BaseResource(true, 'Data statistik berhasil diambil', $data, 200);
+
+        } catch (\Exception $e) {
+            return new BaseResource(false, 'Gagal mengambil statistik: ' . $e->getMessage(), null, 500);
+        }
     }
 }

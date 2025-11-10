@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '/models/cart_model.dart';
 import '/models/my_order_item_model.dart';
 import '/models/admin_order_model.dart';
+import '/models/statistics_model.dart';
 
 class OrderService {
   static const String _baseUrl = 'http://10.0.2.2:8000/api';
@@ -85,13 +86,16 @@ class OrderService {
         List<dynamic> data = jsonResponse['data'];
         return data.map((item) => MyOrderItemModel.fromJson(item)).toList();
       } else {
-        // Jika data kosong (tapi request berhasil), kembalikan list kosong
-        if (jsonResponse['status'] == true && jsonResponse['data'] == null) {
-          return [];
-        }
-        throw Exception(jsonResponse['message'] ?? 'Gagal memuat data pesanan');
+        // Jika status true tapi data null
+        return [];
       }
-    } else {
+    } 
+    // 404 = Tidak Ditemukan (customer belum punya pesanan)
+    else if (response.statusCode == 404) {
+      return [];
+    } 
+    // Error lainnya
+    else {
       throw Exception('Gagal memuat data pesanan: ${response.body}');
     }
   }
@@ -167,7 +171,6 @@ class OrderService {
     }
 
     final response = await http.patch(
-      // Panggil endpoint baru yang kita buat di routes/api.php
       Uri.parse('$_baseUrl/my-orders/$orderId/receive'), 
       headers: {
         'Content-Type': 'application/json',
@@ -188,6 +191,34 @@ class OrderService {
       } catch (e) {
         throw Exception('Gagal update status: ${response.body}');
       }
+    }
+  }
+
+  static Future<StatisticsModel> getStatistics(String filter) async { // 1. Terima filter
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('Token tidak ditemukan. Silakan login ulang.');
+    }
+
+    final response = await http.get(
+      Uri.parse('$_baseUrl/admin/statistics/$filter'), 
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      
+      if (jsonResponse['status'] == true && jsonResponse['data'] != null) {
+        return StatisticsModel.fromJson(jsonResponse['data']);
+      } else {
+        throw Exception(jsonResponse['message'] ?? 'Gagal memuat data statistik');
+      }
+    } else {
+      throw Exception('Gagal memuat data statistik: ${response.body}');
     }
   }
 }

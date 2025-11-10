@@ -1,46 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:campgear/services/chat_service.dart';
-import 'package:campgear/services/auth_service.dart';
+import 'package:campgear/services/chat_service.dart'; 
 
-class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+class AdminChatPage extends StatefulWidget {
+  // Halaman ini Menerima ID & Nama Customer yang akan di-chat
+  final String customerUserId;
+  final String customerName;
+
+  const AdminChatPage({
+    super.key,
+    required this.customerUserId,
+    required this.customerName,
+  });
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  State<AdminChatPage> createState() => _AdminChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _AdminChatPageState extends State<AdminChatPage> {
   final ChatService _chatService = ChatService();
   final TextEditingController _messageController = TextEditingController();
 
-  // ID customer yang sedang login. Kita anggap 'admin' adalah ID tetap.
-  String? _customerUserId;
-  final String _adminId = 'admin'; // ID unik untuk admin
-
-  bool _isLoading = true; // Untuk loading ID user
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCurrentUser();
-  }
-
-  // Ambil ID user yang sedang login
-  Future<void> _loadCurrentUser() async {
-    final userId = await AuthService.getUserId();
-    setState(() {
-      _customerUserId = userId?.toString();
-      _isLoading = false;
-    });
-  }
+  // ID Admin kita buat statis "admin"
+  final String _adminId = 'admin';
 
   void _sendMessage() {
-    if (_messageController.text.isNotEmpty && _customerUserId != null) {
+    if (_messageController.text.isNotEmpty) {
       _chatService.sendMessage(
-        customerUserId: _customerUserId!,
+        // 1. Tentukan chat room (berdasarkan ID customer)
+        customerUserId: widget.customerUserId,
+        
+        // 2. Isi pesan
         text: _messageController.text,
-        senderId: _customerUserId!, // Pengirim adalah customer
+        
+        // 3. Pengirimnya adalah ADMIN
+        senderId: _adminId, 
       );
       _messageController.clear();
     }
@@ -57,34 +51,54 @@ class _ChatPageState extends State<ChatPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF597E52),
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            ClipOval(
-              child: Image.asset(
-                'assets/images/logo.png',
-                width: 46, 
-                height: 46,
-                fit: BoxFit.contain, 
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Text(
-              'Admin Support',
-              style: TextStyle(
+  backgroundColor: const Color(0xFF597E52),
+  automaticallyImplyLeading: true,
+  title: Row(
+    children: [
+      // Avatar dengan style seperti di profil
+      Stack(
+        alignment: Alignment.center,
+        children: [
+          const CircleAvatar(
+            radius: 18, // lingkaran luar putih
+            backgroundColor: Colors.white,
+          ),
+          CircleAvatar(
+            radius: 17, // lingkaran dalam hijau
+            backgroundColor: const Color(0xFF5D7F5F),
+            child: Text(
+              widget.customerName.isNotEmpty
+                  ? widget.customerName[0].toUpperCase()
+                  : '?',
+              style: const TextStyle(
                 color: Colors.white,
+                fontWeight: FontWeight.bold,
                 fontSize: 20,
-                fontWeight: FontWeight.w600,
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+      const SizedBox(width: 10),
+      // Nama customer
+      Text(
+        widget.customerName,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
         ),
       ),
+    ],
+  ),
+  iconTheme: const IconThemeData(color: Colors.white),
+),
 
       body: Column(
         children: [
-          Expanded(child: _buildMessageList()),
+          Expanded(
+            child: _buildMessageList(),
+          ),
           _buildMessageInput(),
         ],
       ),
@@ -93,18 +107,9 @@ class _ChatPageState extends State<ChatPage> {
 
   // Widget untuk menampilkan daftar pesan
   Widget _buildMessageList() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_customerUserId == null) {
-      return const Center(
-        child: Text("Gagal memuat ID user. Silakan login ulang."),
-      );
-    }
-
     return StreamBuilder<QuerySnapshot>(
-      stream: _chatService.getMessagesStream(customerUserId: _customerUserId!),
+      // Ambil stream pesan untuk customer ID yang spesifik
+      stream: _chatService.getMessagesStream(customerUserId: widget.customerUserId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
@@ -117,20 +122,20 @@ class _ChatPageState extends State<ChatPage> {
 
         if (messages.isEmpty) {
           return const Center(
-            child: Text("Mulai percakapan Anda dengan Admin!"),
+            child: Text("Belum ada percakapan."),
           );
         }
 
         return ListView.builder(
-          reverse: true, // Agar chat mulai dari bawah
+          reverse: true, // Chat mulai dari bawah
           itemCount: messages.length,
           padding: const EdgeInsets.all(16),
           itemBuilder: (context, index) {
             final doc = messages[index];
             final data = doc.data() as Map<String, dynamic>;
-
-            // Tentukan apakah pengirim adalah customer (user ini) atau admin
-            final bool isMe = data['senderId'] == _customerUserId;
+            
+            // Logika 'isMe' dibalik: "isMe" == true jika pengirimnya adalah Admin
+            final bool isMe = data['senderId'] == _adminId;
 
             return _buildMessageBubble(data['text'], isMe);
           },
@@ -154,12 +159,14 @@ class _ChatPageState extends State<ChatPage> {
               color: Colors.black.withOpacity(0.05),
               blurRadius: 3,
               offset: const Offset(0, 1),
-            ),
+            )
           ],
         ),
         child: Text(
           text,
-          style: TextStyle(color: isMe ? Colors.white : Colors.black87),
+          style: TextStyle(
+            color: isMe ? Colors.white : Colors.black87,
+          ),
         ),
       ),
     );
@@ -186,7 +193,7 @@ class _ChatPageState extends State<ChatPage> {
               child: TextField(
                 controller: _messageController,
                 decoration: const InputDecoration(
-                  hintText: 'Ketik pesan...',
+                  hintText: 'Ketik balasan...',
                   border: InputBorder.none,
                 ),
                 onSubmitted: (_) => _sendMessage(),

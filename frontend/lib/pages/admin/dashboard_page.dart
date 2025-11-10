@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:campgear/widgets/admin_drawer.dart';
-
-// Import halaman yang mau dituju
 import 'package:campgear/pages/admin/manage_product_page.dart';
 import 'package:campgear/pages/admin/manage_orders_page.dart';
 import 'package:campgear/pages/admin/revenue_page.dart';
@@ -13,6 +11,7 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       drawer: const AdminDrawer(),
       appBar: AppBar(
         title: const Text(
@@ -24,6 +23,8 @@ class AdminDashboardPage extends StatelessWidget {
       ),
       body: GridView.count(
         crossAxisCount: 2,
+        mainAxisSpacing: 14, 
+        crossAxisSpacing: 14, 
         padding: const EdgeInsets.all(16),
         children: [
           _buildCard(
@@ -71,8 +72,9 @@ class AdminDashboardPage extends StatelessWidget {
         Navigator.push(context, MaterialPageRoute(builder: (context) => page));
       },
       child: Card(
+        color: const Color(0xFFF5F5F5),
         elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
