@@ -7,7 +7,7 @@ import '/layout/buttom_nav.dart';
 import 'package:intl/intl.dart'; 
 
 class CartPage extends StatefulWidget {
-  const CartPage({Key? key}) : super(key: key);
+  const CartPage({super.key});
 
   @override
   State<CartPage> createState() => _CartPageState();
@@ -83,6 +83,7 @@ class _CartPageState extends State<CartPage> {
         _loadCartData(); // Refresh seluruh keranjang
       }
     } catch (e) {
+      if (!mounted) return;
       // Handle error
       ScaffoldMessenger.of(
         context,
@@ -110,6 +111,7 @@ class _CartPageState extends State<CartPage> {
         _loadCartData(); // Refresh
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
@@ -173,8 +175,8 @@ class _CartPageState extends State<CartPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.5),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -202,7 +204,7 @@ class _CartPageState extends State<CartPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -310,7 +312,7 @@ class _CartPageState extends State<CartPage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -374,8 +376,6 @@ class _CartPageState extends State<CartPage> {
                     List<CartItemModel> itemsToCheckout = items
                         .where((item) => item.isSelected)
                         .toList();
-
-                    // TODO: Kirim `itemsToCheckout` dan `totalPrice` ke PaymentPage
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -526,9 +526,6 @@ class _CartPageState extends State<CartPage> {
                 ],
               ),
             ),
-
-            // TODO: Anda bisa menambahkan logika voucher/gratis ongkir di sini
-            // jika API Anda menyediakannya.
           ],
         ),
       ),

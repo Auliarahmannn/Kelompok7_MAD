@@ -8,7 +8,7 @@ import '/pages/cart/cart_page.dart';
 class HistoryPage extends StatefulWidget {
   final String? initialStatus;
 
-  const HistoryPage({Key? key, this.initialStatus}) : super(key: key);
+  const HistoryPage({super.key, this.initialStatus});
 
   @override
   State<HistoryPage> createState() => _HistoryPageState();
@@ -106,8 +106,8 @@ class _HistoryPageState extends State<HistoryPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.5),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -136,7 +136,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -216,7 +216,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 child: Text(
                   displayName,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : activeColor.withOpacity(0.8),
+                    color: isSelected ? Colors.white : activeColor.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -294,7 +294,7 @@ class _HistoryPageState extends State<HistoryPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),

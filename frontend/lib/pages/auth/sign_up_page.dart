@@ -30,10 +30,15 @@ class _SignUpPageState extends State<SignUpPage> {
     final address = addressController.text.trim(); // 🔥 Data Address
 
     // ✅ Validasi sederhana
-    if (email.isEmpty || username.isEmpty || password.isEmpty || repeatPassword.isEmpty || phone.isEmpty || address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Semua field wajib diisi')),
-      );
+    if (email.isEmpty ||
+        username.isEmpty ||
+        password.isEmpty ||
+        repeatPassword.isEmpty ||
+        phone.isEmpty ||
+        address.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Semua field wajib diisi')));
       return;
     }
 
@@ -46,7 +51,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
     if (password != repeatPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password dan Ulangi Password tidak cocok')),
+        const SnackBar(
+          content: Text('Password dan Ulangi Password tidak cocok'),
+        ),
       );
       return;
     }
@@ -55,6 +62,8 @@ class _SignUpPageState extends State<SignUpPage> {
     final response = await AuthService.sendCode(email);
 
     final status = response['status'];
+    if (!mounted) return;
+
     if (status == true || status == 1 || status == 'success') {
       Navigator.pushReplacement(
         context,
@@ -63,8 +72,8 @@ class _SignUpPageState extends State<SignUpPage> {
             email: email,
             name: username,
             password: password,
-            phone: phone, // 🔥 Kirim Phone
-            address: address, // 🔥 Kirim Address
+            phone: phone, // Kirim Phone
+            address: address, // Kirim Address
           ),
         ),
       );
@@ -84,10 +93,7 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             children: [
               const SizedBox(height: 40),
-              Image.asset(
-                'assets/images/loginlogo.png',
-                height: 150,
-              ),
+              Image.asset('assets/images/loginlogo.png', height: 150),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(20),
@@ -118,7 +124,7 @@ class _SignUpPageState extends State<SignUpPage> {
                         hintText: "Masukan Username Anda",
                       ),
                     ),
-                    
+
                     // 🔥 FIELD BARU: Phone
                     const SizedBox(height: 16),
                     const Text("Phone Number"),
@@ -149,9 +155,11 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         hintText: "Masukan Password Anda",
                         suffixIcon: IconButton(
-                          icon: Icon(obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () {
                             setState(() {
                               obscurePassword = !obscurePassword;
@@ -169,9 +177,11 @@ class _SignUpPageState extends State<SignUpPage> {
                       decoration: InputDecoration(
                         hintText: "Ulangi Password Anda",
                         suffixIcon: IconButton(
-                          icon: Icon(obscureRepeatPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
+                          icon: Icon(
+                            obscureRepeatPassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
                           onPressed: () {
                             setState(() {
                               obscureRepeatPassword = !obscureRepeatPassword;
@@ -202,10 +212,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     Center(
                       child: Image.network(
                         'http://pngimg.com/uploads/google/google_PNG19635.png', // gambar google
-                        fit:BoxFit.cover,
+                        fit: BoxFit.cover,
                         width: 50,
                         height: 50,
-                      )
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Center(
@@ -223,16 +233,19 @@ class _SignUpPageState extends State<SignUpPage> {
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  Navigator.pushReplacementNamed(context, '/signin');
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/signin',
+                                  );
                                 },
-                            )
+                            ),
                           ],
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
-              )
+              ),
             ],
           ),
         ),

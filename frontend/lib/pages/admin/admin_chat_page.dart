@@ -156,7 +156,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 3,
               offset: const Offset(0, 1),
             )
@@ -180,7 +180,7 @@ class _AdminChatPageState extends State<AdminChatPage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha:0.2),
             blurRadius: 4,
             offset: const Offset(0, -1),
           ),

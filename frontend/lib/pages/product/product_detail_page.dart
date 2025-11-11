@@ -41,51 +41,44 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   }
 
   Future<void> _handleAddToCart() async {
+    if (!mounted) return;
     setState(() {
       _isAddingToCart = true;
     });
 
     try {
-      bool success = await CartService.addToCart(
-        productId: widget.productId, // pakai 'widget.'
-        quantity: 1, // default tambah 1
+      final success = await CartService.addToCart(
+        productId: widget.productId,
+        quantity: 1,
       );
 
-      if (success && context.mounted) {
+      if (!mounted) return;
+
+      if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Produk ditambahkan ke keranjang',
-            ),
+            content: Text('Produk ditambahkan ke keranjang'),
             duration: Duration(seconds: 2),
             backgroundColor: Color(0xFFD4A574),
           ),
         );
-      } else if (context.mounted) {
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Gagal menambah ke keranjang',
-            ),
+            content: Text('Gagal menambah ke keranjang'),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceAll(
-                'Exception: ',
-                '',
-              ),
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -119,17 +112,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
         // Siapkan data untuk PaymentPage
         final List<CartItemModel> items = [itemToCheckout];
-        final int totalPrice = (itemToCheckout.price * itemToCheckout.quantity).toInt();
+        final int totalPrice = (itemToCheckout.price * itemToCheckout.quantity)
+            .toInt();
 
         // Navigasi ke PaymentPage
         if (context.mounted) {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => PaymentPage(
-                totalPrice: totalPrice,
-                itemsToCheckout: items,
-              ),
+              builder: (context) =>
+                  PaymentPage(totalPrice: totalPrice, itemsToCheckout: items),
             ),
           );
         }
@@ -173,12 +165,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 Stack(
                   children: [
                     Container(
-                      height: 350,
                       width: double.infinity,
-                      color: Colors.grey[100],
-                      child: Image.asset(
-                        widget.foto,
-                        fit: BoxFit.contain,
+                      height: MediaQuery.of(context).size.height * 0.45,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        image: DecorationImage(
+                          image: AssetImage(widget.foto),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     // Tombol back dan cart
@@ -197,7 +191,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 8,
                                     ),
                                   ],
@@ -224,7 +220,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.1,
+                                      ),
                                       blurRadius: 8,
                                     ),
                                   ],
@@ -285,7 +283,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                       width: 24,
                                       height: 24,
                                       child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2),
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Icon(
                                       Icons.shopping_cart_outlined,
@@ -301,7 +301,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF5D7F5F),
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -311,15 +313,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               ),
                               // Panggil fungsi _handleBuyNow
                               // Nonaktifkan jika salah satu sedang loading
-                              onPressed: (_isAddingToCart || _isBuyingNow) 
-                                  ? null 
+                              onPressed: (_isAddingToCart || _isBuyingNow)
+                                  ? null
                                   : _handleBuyNow,
                               child: _isBuyingNow
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2),
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Text(
                                       'Pinjam Sekarang',
@@ -347,7 +351,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      _buildSpecRow('Kategori', 'CampGear > Tenda dan Tempat Tidur'),
+                      _buildSpecRow(
+                        'Kategori',
+                        'CampGear > Tenda dan Tempat Tidur',
+                      ),
                       _buildSpecRow('Stok', widget.stok.toString()),
                       _buildSpecRow('Merek', 'Eiger'),
 
@@ -395,10 +402,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             width: 80,
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
             ),
           ),
           Expanded(

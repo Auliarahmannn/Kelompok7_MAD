@@ -26,10 +26,9 @@ class ShippingOption {
 }
 
 // --- Halaman Placeholder untuk Edit Alamat ---
-// TODO: Pindahkan ini ke file baru (misal: edit_address_page.dart)
 class EditAddressPage extends StatelessWidget {
   final UserModel user;
-  const EditAddressPage({Key? key, required this.user}) : super(key: key);
+  const EditAddressPage({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -61,10 +60,10 @@ class PaymentPage extends StatefulWidget {
   final List<CartItemModel> itemsToCheckout;
 
   const PaymentPage({
-    Key? key,
+    super.key,
     required this.totalPrice,
     required this.itemsToCheckout,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
@@ -218,7 +217,7 @@ class _PaymentPageState extends State<PaymentPage> {
                       },
                       activeColor: Color(0xFF5D7F5F),
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             );
@@ -263,8 +262,8 @@ class _PaymentPageState extends State<PaymentPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.5),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -286,7 +285,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -630,7 +629,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -5),
                       ),

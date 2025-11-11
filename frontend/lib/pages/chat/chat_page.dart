@@ -16,7 +16,6 @@ class _ChatPageState extends State<ChatPage> {
 
   // ID customer yang sedang login. Kita anggap 'admin' adalah ID tetap.
   String? _customerUserId;
-  final String _adminId = 'admin'; // ID unik untuk admin
 
   bool _isLoading = true; // Untuk loading ID user
 
@@ -151,7 +150,7 @@ class _ChatPageState extends State<ChatPage> {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 3,
               offset: const Offset(0, 1),
             ),
@@ -173,7 +172,7 @@ class _ChatPageState extends State<ChatPage> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: Colors.grey.withValues(alpha: 0.2),
             blurRadius: 4,
             offset: const Offset(0, -1),
           ),
