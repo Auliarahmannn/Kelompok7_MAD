@@ -12,11 +12,11 @@ class PaymentDetailPage extends StatefulWidget {
   final PaymentMethodModel selectedPaymentMethod;
 
   const PaymentDetailPage({
-    Key? key,
+    super.key,
     required this.totalPrice,
     required this.itemsToCheckout,
     required this.selectedPaymentMethod,
-  }) : super(key: key);
+  });
 
   @override
   State<PaymentDetailPage> createState() => _PaymentDetailPageState();
@@ -112,8 +112,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.5),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.black.withValues(alpha: 0.5),
                     ],
                   ),
                 ),
@@ -133,7 +133,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.3),
+                            color: Colors.white.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: const Icon(
@@ -424,7 +424,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -5),
                       ),

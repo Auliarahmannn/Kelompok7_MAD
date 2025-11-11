@@ -168,6 +168,7 @@ class _ManageProductPageState extends State<ManageProductPage> {
 
     if (confirm == true) {
       final success = await ProductService.deleteProduct(id);
+      if (!mounted) return;
       if (success) {
         fetchProducts();
         ScaffoldMessenger.of(context).showSnackBar(

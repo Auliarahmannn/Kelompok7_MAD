@@ -48,7 +48,7 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
   Future<void> _updateStatus(AdminOrderModel order, String newStatus) async {
     try {
       final result = await OrderService.updateOrderStatus(order.id, newStatus);
-
+      if (!mounted) return;
       if (result['status'] == true) {
         setState(() {
           order.status = newStatus;
@@ -90,17 +90,17 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'dibayar':
-        return Colors.green.withOpacity(0.75);
+        return Colors.green.withValues(alpha: 0.75);
       case 'pending':
-        return Colors.orange.withOpacity(0.75);
+        return Colors.orange.withValues(alpha: 0.75);
       case 'dikirim':
-        return Colors.blue.withOpacity(0.75);
+        return Colors.blue.withValues(alpha: 0.75);
       case 'selesai':
-        return Colors.purple.withOpacity(0.75);
+        return Colors.purple.withValues(alpha: 0.75);
       case 'batal':
-        return Colors.red.withOpacity(0.75);
+        return Colors.red.withValues(alpha: 0.75);
       default:
-        return Colors.grey.withOpacity(0.75);
+        return Colors.grey.withValues(alpha: 0.75);
     }
   }
 
@@ -231,7 +231,7 @@ class _ManageOrdersPageState extends State<ManageOrdersPage> {
                   subtitle: Text("Jumlah: ${item.jumlah}"),
                   trailing: Text("Rp ${item.harga.toStringAsFixed(0)}"),
                 );
-              }).toList(),
+              }),
               const Divider(),
 
               if (order.status != 'selesai')

@@ -226,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 10,
                                 offset: const Offset(0, 2),
                               ),
@@ -300,11 +300,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 }
                               });
                             }),
-                            buildMenu(
-                              Icons.notifications_none,
-                              "Notifikasi",
-                              () {},
-                            ),
                             buildMenu(Icons.lock_outline, "Ganti Password", () {
                               Navigator.push(
                                 context,
@@ -314,22 +309,6 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               );
                             }),
-                            buildMenu(
-                              isDarkMode
-                                  ? Icons.dark_mode
-                                  : Icons.light_mode_outlined,
-                              "Mode Gelap",
-                              () {
-                                setState(() {
-                                  isDarkMode = !isDarkMode;
-                                });
-                              },
-                            ),
-                            buildMenu(
-                              Icons.report_problem_outlined,
-                              "Laporkan Masalah",
-                              () {},
-                            ),
                             buildMenu(
                               Icons.delete_outline,
                               "Hapus Akun",

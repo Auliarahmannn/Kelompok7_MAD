@@ -5,7 +5,7 @@ import 'package:campgear/pages/splash/splash_page.dart';
 import 'package:campgear/pages/auth/sign_in_page.dart';
 import 'package:campgear/pages/auth/sign_up_page.dart';
 import 'package:campgear/pages/auth/welcome_page.dart';
-import 'package:campgear/pages/auth/verification_page.dart';
+// import 'package:campgear/pages/auth/verification_page.dart';
 import 'package:campgear/pages/home/home_page.dart';
 import 'package:campgear/pages/admin/dashboard_page.dart';
 import 'package:campgear/pages/admin/manage_orders_page.dart';
@@ -13,16 +13,16 @@ import 'package:campgear/pages/admin/manage_product_page.dart';
 import 'package:campgear/pages/admin/admin_profile_page.dart';
 
 import 'package:campgear/pages/profile/profile_page.dart';
-import 'package:campgear/pages/profile/profile_update.dart';
+// import 'package:campgear/pages/profile/profile_update.dart';
 import 'package:campgear/pages/profile/profile_change_password.dart';
 import 'package:campgear/pages/profile/profile_delete.dart';
 import 'package:campgear/pages/cart/cart_page.dart';
-import 'package:campgear/pages/payment/payment_page.dart';
+// import 'package:campgear/pages/payment/payment_page.dart';
 import 'package:campgear/pages/payment/payment_success_dialog.dart';
 import 'package:campgear/pages/history/history_page.dart';
 import 'package:campgear/pages/chat/chat_page.dart';
 import 'package:campgear/pages/onboarding/onboarding_page.dart';
-import 'package:campgear/pages/product/product_detail_page.dart';
+// import 'package:campgear/pages/product/product_detail_page.dart';
 
 class AppRoutes {
   static const splash = '/splash';

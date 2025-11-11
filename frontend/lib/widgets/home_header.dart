@@ -20,7 +20,7 @@ class HomeHeader extends StatelessWidget {
         Container(
           width: double.infinity,
           height: 250,
-          color: Colors.black.withOpacity(0.3),
+          color: Colors.black.withValues(alpha: 0.3),
         ),
         Positioned(
           top: 40,
