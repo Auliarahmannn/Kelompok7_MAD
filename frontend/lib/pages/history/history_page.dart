@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '/layout/buttom_nav.dart';
-import '/models/my_order_item_model.dart'; 
-import '/services/order_service.dart';     
-import '/services/cart_service.dart'; 
+import '/models/my_order_item_model.dart';
+import '/services/order_service.dart';
+import '/services/cart_service.dart';
 import '/pages/cart/cart_page.dart';
 
 class HistoryPage extends StatefulWidget {
@@ -82,7 +82,7 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5),
       body: Stack(
         children: [
           // Background image (biarkan sama)
@@ -159,19 +159,19 @@ class _HistoryPageState extends State<HistoryPage> {
                 ),
 
                 _buildFilterTabs(),
-             
+
                 Expanded(
                   child: Container(
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(24),
-                          topRight: Radius.circular(24),
-                        ),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
                       ),
-                      // 8. Tampilkan loading, error, atau list
-                      child: _buildContent(),
                     ),
+                    // 8. Tampilkan loading, error, atau list
+                    child: _buildContent(),
+                  ),
                 ),
               ],
             ),
@@ -190,12 +190,13 @@ class _HistoryPageState extends State<HistoryPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
         itemCount: _tabs.length,
-        separatorBuilder: (context, index) => const SizedBox(width: 8), // Jarak antar kotak
+        separatorBuilder: (context, index) =>
+            const SizedBox(width: 8), // Jarak antar kotak
         itemBuilder: (context, index) {
           final status = _tabs[index];
           final displayName = _tabDisplay[status]!;
           final bool isSelected = (_selectedStatus == status);
-          
+
           const Color activeColor = Color(0xFF5D7F5F);
           final Color unselectedColor = Colors.grey[200]!;
 
@@ -216,7 +217,9 @@ class _HistoryPageState extends State<HistoryPage> {
                 child: Text(
                   displayName,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : activeColor.withValues(alpha: 0.8),
+                    color: isSelected
+                        ? Colors.white
+                        : activeColor.withValues(alpha: 0.8),
                     fontWeight: FontWeight.w600,
                     fontSize: 12,
                   ),
@@ -228,7 +231,7 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
   }
-  
+
   // Widget untuk konten list (Biarkan sama)
   Widget _buildContent() {
     if (_isLoading) {
@@ -236,7 +239,7 @@ class _HistoryPageState extends State<HistoryPage> {
         child: CircularProgressIndicator(color: Color(0xFF5D7F5F)),
       );
     }
-    
+
     if (_error.isNotEmpty) {
       return Center(
         child: Padding(
@@ -267,17 +270,13 @@ class _HistoryPageState extends State<HistoryPage> {
         final item = _filteredItems[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
-          child: _buildOrderCard(
-            context,
-            item: item,
-          ),
+          child: _buildOrderCard(context, item: item),
         );
       },
     );
   }
 
-
-  // _buildOrderCard 
+  // _buildOrderCard
   Widget _buildOrderCard(
     BuildContext context, {
     required MyOrderItemModel item,
@@ -316,7 +315,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.asset( 
+                    child: Image.asset(
                       imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
@@ -382,67 +381,6 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
           if (item.status == 'selesai')
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF5D7F5F),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Nilai pesanan untuk mendapatkan voucher!'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                            ),
-                            children: [
-                              const TextSpan(
-                                text: 'Nilai Pesanan Pembelianmu Untuk Mendapatkan Voucher pembelian berikutnya ',
-                              ),
-                              TextSpan(
-                                text: 'yuk ikut berpartisipasi',
-                                style: TextStyle(
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.orange[200],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          if (item.status == 'selesai')
             Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -494,33 +432,36 @@ class _HistoryPageState extends State<HistoryPage> {
                 ],
               ),
             ),
-            if (item.status == 'dikirim')
-           Padding(
+          if (item.status == 'dikirim')
+            Padding(
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Expanded(child: SizedBox()),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        _showKonfirmasiDiterima(item);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        // Kita pakai warna aksen oranye agar menonjol
-                        backgroundColor: const Color(0xFFD4A574),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: 0,
+                  ElevatedButton(
+                    onPressed: () {
+                      _showKonfirmasiDiterima(item);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFD4A574),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        'Pesanan Diterima',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 13,
+                        vertical: 10,
+                      ),
+                      minimumSize: const Size(0, 32), // tinggi tombol kecil
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Pesanan Diterima',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
                       ),
                     ),
                   ),
@@ -531,7 +472,7 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
     );
   }
-  
+
   // _showRatingDialog (Biarkan sama)
   void _showRatingDialog(BuildContext context, String productName) {
     int selectedRating = 0;
@@ -548,10 +489,7 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
               title: const Text(
                 'Beri Penilaian',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -714,7 +652,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 TextButton(
                   onPressed: isAdding
                       ? null
-                      : () { // Nonaktifkan saat loading
+                      : () {
+                          // Nonaktifkan saat loading
                           Navigator.of(dialogContext).pop();
                         },
                   child: const Text(
@@ -725,7 +664,8 @@ class _HistoryPageState extends State<HistoryPage> {
                 ElevatedButton(
                   onPressed: isAdding
                       ? null
-                      : () async { // Nonaktifkan saat loading
+                      : () async {
+                          // Nonaktifkan saat loading
                           // 1. Set loading
                           setDialogState(() {
                             isAdding = true;
@@ -744,8 +684,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               // 3. Tampilkan notifikasi sukses
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content:
-                                      Text('Produk ditambahkan ke keranjang!'),
+                                  content: Text(
+                                    'Produk ditambahkan ke keranjang!',
+                                  ),
                                   backgroundColor: Color(0xFF5D7F5F),
                                   duration: Duration(seconds: 2),
                                 ),
@@ -755,7 +696,8 @@ class _HistoryPageState extends State<HistoryPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => const CartPage()),
+                                  builder: (context) => const CartPage(),
+                                ),
                               );
                             } else {
                               throw Exception('Gagal menambah ke keranjang');
@@ -766,9 +708,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               Navigator.of(dialogContext).pop(); // Tutup dialog
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(e
-                                      .toString()
-                                      .replaceAll('Exception: ', '')),
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -782,12 +724,16 @@ class _HistoryPageState extends State<HistoryPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: isAdding // Tampilkan loading
+                  child:
+                      isAdding // Tampilkan loading
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : const Text(
                           'Ya, Sewa Lagi',
                           style: TextStyle(color: Colors.white),
@@ -823,7 +769,10 @@ class _HistoryPageState extends State<HistoryPage> {
               actions: [
                 TextButton(
                   // ignore: sort_child_properties_last
-                  child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Batal',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   // Nonaktifkan saat loading
                   onPressed: isUpdating
                       ? null
@@ -844,10 +793,15 @@ class _HistoryPageState extends State<HistoryPage> {
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text('Ya, Sudah Diterima',
-                          style: TextStyle(color: Colors.white)),
-                  
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Ya, Sudah Diterima',
+                          style: TextStyle(color: Colors.white),
+                        ),
+
                   // Logika onPressed diubah
                   onPressed: isUpdating
                       ? null
@@ -861,7 +815,9 @@ class _HistoryPageState extends State<HistoryPage> {
                             // 2. Panggil API
                             // 'item' adalah MyOrderItemModel, kita butuh 'orderId'-nya
                             bool success =
-                                await OrderService.confirmOrderReceived(item.orderId);
+                                await OrderService.confirmOrderReceived(
+                                  item.orderId,
+                                );
 
                             if (success && context.mounted) {
                               Navigator.of(dialogContext).pop(); // Tutup dialog
@@ -870,7 +826,8 @@ class _HistoryPageState extends State<HistoryPage> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                      'Berhasil! Status pesanan diperbarui ke "Selesai".'),
+                                    'Berhasil! Status pesanan diperbarui ke "Selesai".',
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -879,7 +836,8 @@ class _HistoryPageState extends State<HistoryPage> {
                               _fetchMyOrders();
                             } else {
                               throw Exception(
-                                  'Gagal mengupdate status dari server');
+                                'Gagal mengupdate status dari server',
+                              );
                             }
                           } catch (e) {
                             // 5. Handle Error
@@ -887,9 +845,9 @@ class _HistoryPageState extends State<HistoryPage> {
                               Navigator.of(dialogContext).pop(); // Tutup dialog
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(e
-                                      .toString()
-                                      .replaceAll('Exception: ', '')),
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
@@ -908,8 +866,8 @@ class _HistoryPageState extends State<HistoryPage> {
   // _formatPrice (Biarkan sama)
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]}.',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
   }
 }
