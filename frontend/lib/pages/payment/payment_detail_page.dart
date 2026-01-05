@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:io';
+import 'dart:async';
+import 'package:image_picker/image_picker.dart';
 import '/widgets/custom_button.dart';
 import 'payment_success_dialog.dart';
 import '/models/cart_model.dart';
@@ -10,12 +13,14 @@ class PaymentDetailPage extends StatefulWidget {
   final int totalPrice;
   final List<CartItemModel> itemsToCheckout;
   final PaymentMethodModel selectedPaymentMethod;
+  final int orderId;
 
   const PaymentDetailPage({
     super.key,
     required this.totalPrice,
     required this.itemsToCheckout,
     required this.selectedPaymentMethod,
+    required this.orderId,
   });
 
   @override
@@ -23,7 +28,116 @@ class PaymentDetailPage extends StatefulWidget {
 }
 
 class _PaymentDetailPageState extends State<PaymentDetailPage> {
-  bool _isLoading = false; // State untuk loading
+  bool _isUploading = false;
+  File? _pickedImage;
+  String? _proofUrl;
+  bool _isFetchingProof = true;
+  final GlobalKey _proofAreaKey = GlobalKey();
+
+  // Timer variables
+  Timer? _countdownTimer;
+  late DateTime _expiryTime;
+  Duration _remainingTime = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProofStatus();
+    _initializeTimer();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  // Inisialisasi timer (24 jam dari sekarang)
+  void _initializeTimer() {
+    _expiryTime = DateTime.now().add(const Duration(hours: 24));
+    _updateRemainingTime();
+    _startCountdown();
+  }
+
+  // Mulai countdown timer
+  void _startCountdown() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _updateRemainingTime();
+        });
+
+        // Jika waktu habis
+        if (_remainingTime.inSeconds <= 0) {
+          timer.cancel();
+          _showTimeExpiredDialog();
+        }
+      }
+    });
+  }
+
+  // Update remaining time
+  void _updateRemainingTime() {
+    final now = DateTime.now();
+    if (_expiryTime.isAfter(now)) {
+      _remainingTime = _expiryTime.difference(now);
+    } else {
+      _remainingTime = Duration.zero;
+    }
+  }
+
+  // Format countdown string
+  String _formatCountdown() {
+    if (_remainingTime.inSeconds <= 0) {
+      return 'Waktu habis';
+    }
+
+    final hours = _remainingTime.inHours;
+    final minutes = _remainingTime.inMinutes.remainder(60);
+    final seconds = _remainingTime.inSeconds.remainder(60);
+
+    return '$hours jam ${minutes.toString().padLeft(2, '0')} menit ${seconds.toString().padLeft(2, '0')} detik';
+  }
+
+  // Format tanggal jatuh tempo (tanpa package intl)
+  String _formatExpiryDate() {
+    final months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    
+    return '${_expiryTime.day} ${months[_expiryTime.month - 1]} ${_expiryTime.year}';
+  }
+
+  // Format waktu jatuh tempo
+  String _formatExpiryTime() {
+    final hour = _expiryTime.hour.toString().padLeft(2, '0');
+    final minute = _expiryTime.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  // Dialog ketika waktu habis
+  void _showTimeExpiredDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('Waktu Pembayaran Habis'),
+        content: const Text(
+          'Batas waktu pembayaran telah berakhir. Silakan buat pesanan baru.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close dialog
+              Navigator.of(context).pop(); // Close payment page
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
@@ -32,61 +146,134 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
     );
   }
 
-  // Fungsi untuk memanggil API Checkout
-  Future<void> _processCheckout() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? xFile = await picker.pickImage(source: ImageSource.gallery);
+
+      if (!mounted) return;
+
+      if (xFile != null) {
+        setState(() {
+          _pickedImage = File(xFile.path);
+        });
+        if (_proofAreaKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _proofAreaKey.currentContext!,
+            duration: const Duration(milliseconds: 500),
+            alignment: 1.0,
+          );
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memilih gambar: $e')),
+      );
+    }
+  }
+
+  Future<void> _handleUploadProof() async {
+    if (_pickedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pilih foto bukti pembayaran terlebih dahulu.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isUploading = true);
 
     try {
-      // Panggil service
-      final result = await OrderService.checkout(
-        items: widget.itemsToCheckout,
-        paymentMethodId: widget.selectedPaymentMethod.id,
+      final result = await OrderService.uploadPaymentProof(
+        widget.orderId,
+        _pickedImage!,
       );
 
+      if (!mounted) return;
+
       if (result['status'] == true) {
+        final String imageBaseUrl = 'http://10.0.2.2:8000/';
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Bukti pembayaran berhasil diupload! Menunggu konfirmasi Admin.',
+            ),
+            backgroundColor: Color(0xFF5D7F5F),
+          ),
+        );
+        setState(() {
+          _proofUrl = imageBaseUrl + result['data']['proof_path'];
+          _pickedImage = null;
+        });
         _showSuccessDialog(context);
       } else {
+        final String errorMessage =
+            result['message'] ?? 'Upload gagal. Coba lagi.';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(result['message'] ?? 'Checkout gagal.'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red,
           ),
         );
       }
     } catch (e) {
-      // Tampilkan error koneksi
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: ${e.toString()}'),
+          content: Text(
+            'Error Upload: ${e.toString().replaceAll('Exception: ', '')}',
+          ),
           backgroundColor: Colors.red,
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _fetchProofStatus() async {
+    setState(() => _isFetchingProof = true);
+    try {
+      final detail = await OrderService.getCustomerPaymentDetail(
+        widget.orderId,
+      );
+      if (mounted) {
+        setState(() {
+          _proofUrl = detail['proof_url'];
+        });
+        debugPrint('✅ Fetch Bukti Berhasil. URL Bukti: $_proofUrl');
+      }
+    } catch (e) {
+      debugPrint('❌ Error fetching proof status: $e');
+    } finally {
+      if (mounted) setState(() => _isFetchingProof = false);
+    }
+  }
+
+  Future<void> _processButtonAction() async {
+    if (_pickedImage == null) {
+      await _pickImage();
+    } else {
+      _handleUploadProof();
     }
   }
 
   void _showSuccessDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false, // User tidak bisa menutup dialog
+      barrierDismissible: false,
       builder: (context) => const PaymentSuccessDialog(),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Ambil data dari metode pembayaran yang dipilih
-    // (Idealnya data VA/nomor rekening juga diambil dari DB)
     final String paymentName = widget.selectedPaymentMethod.metode;
-    final String vaNumber = "781 8239 8765 0927"; // (Contoh)
-    final String paymentLogoText = paymentName
-        .split(' ')
-        .first; // (Contoh: 'GoPay')
+    final String vaNumber = "781 8239 8765 0927";
+    final String paymentLogoText = paymentName.split(' ').first;
 
     return Scaffold(
       body: Stack(
@@ -172,7 +359,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Total Payment (Dinamis)
+                          // Total Payment
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -204,7 +391,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
                           const SizedBox(height: 12),
 
-                          // Countdown
+                          // Countdown - UPDATED
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -225,11 +412,13 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       ),
                                     ),
                                     Text(
-                                      '23 jam 59 menit 40 detik',
+                                      _formatCountdown(),
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.orange[700],
+                                        color: _remainingTime.inHours < 1
+                                            ? Colors.red[700]
+                                            : Colors.orange[700],
                                       ),
                                     ),
                                   ],
@@ -247,7 +436,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                       ),
                                     ),
                                     Text(
-                                      '19 Oktober 2025\n19:45',
+                                      '${_formatExpiryDate()}\n${_formatExpiryTime()}',
                                       textAlign: TextAlign.right,
                                       style: TextStyle(
                                         fontSize: 13,
@@ -262,7 +451,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
                           const SizedBox(height: 12),
 
-                          // Payment Method (Dinamis)
+                          // Payment Method
                           Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -330,9 +519,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                         Clipboard.setData(
                                           ClipboardData(text: vaNumber),
                                         );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
                                           const SnackBar(
                                             content: Text(
                                               'Nomor rekening disalin',
@@ -365,6 +553,11 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
                           const SizedBox(height: 12),
 
+                          // Area Upload Bukti Pembayaran
+                          _buildProofUploadArea(),
+
+                          const SizedBox(height: 12),
+
                           // Transfer Bank Instructions
                           Container(
                             decoration: BoxDecoration(
@@ -372,7 +565,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Theme(
-                              data: ThemeData(dividerColor: Colors.transparent),
+                              data:
+                                  ThemeData(dividerColor: Colors.transparent),
                               child: ExpansionTile(
                                 title: const Text(
                                   'Transfer Bank',
@@ -382,7 +576,8 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                                     color: Colors.black87,
                                   ),
                                 ),
-                                trailing: const Icon(Icons.keyboard_arrow_down),
+                                trailing:
+                                    const Icon(Icons.keyboard_arrow_down),
                                 children: [
                                   Padding(
                                     padding: const EdgeInsets.all(16),
@@ -431,15 +626,144 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     ],
                   ),
                   child: CustomButton(
-                    text: _isLoading ? 'Memproses...' : 'Saya Sudah Bayar',
-                    onPressed: _isLoading ? () {} : () => _processCheckout(),
-                    // Sembunyikan icon jika sedang loading
-                    icon: _isLoading ? null : Icons.check_circle_outline,
+                    text: _isUploading
+                        ? 'Mengupload...'
+                        : (_proofUrl != null
+                            ? 'Bukti Terupload'
+                            : (_pickedImage == null
+                                ? 'Pilih Bukti Transfer'
+                                : 'Upload Bukti Pembayaran')),
+                    onPressed: _isUploading || _proofUrl != null
+                        ? null
+                        : () {
+                            _processButtonAction();
+                          },
+                    icon: _isUploading
+                        ? null
+                        : (_proofUrl != null
+                            ? Icons.check_circle
+                            : (_pickedImage == null
+                                ? Icons.add_photo_alternate
+                                : Icons.cloud_upload)),
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProofUploadArea() {
+    if (_isFetchingProof) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+
+    final String? finalImagePath = _proofUrl ?? _pickedImage?.path;
+    final bool isLocalFile = _pickedImage != null;
+
+    final ImageProvider? imageProvider = finalImagePath != null
+        ? (isLocalFile
+            ? FileImage(File(finalImagePath)) as ImageProvider
+            : NetworkImage(finalImagePath))
+        : null;
+
+    return Container(
+      key: _proofAreaKey,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bukti Pembayaran',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (imageProvider != null)
+            Stack(
+              alignment: Alignment.topRight,
+              children: [
+                SizedBox(
+                  height: 150,
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image(
+                      image: imageProvider,
+                      fit: BoxFit.cover,
+                      errorBuilder: (ctx, err, stack) => Container(
+                        color: Colors.grey[200],
+                        child: const Center(
+                          child: Text("Gagal Muat Bukti (URL/Path salah)"),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (isLocalFile)
+                  Container(
+                    margin: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      padding: EdgeInsets.zero,
+                      iconSize: 20,
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _pickedImage = null;
+                        });
+                      },
+                    ),
+                  ),
+              ],
+            )
+          else
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.grey[300]!,
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.image_search,
+                        size: 40, color: Colors.grey[500]),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Ketuk untuk memilih foto bukti transfer',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

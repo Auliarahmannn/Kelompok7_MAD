@@ -6,9 +6,11 @@ use App\Http\Resources\BaseResource;
 use App\Models\Customers;
 use App\Models\Payments;
 use App\Models\Products;
+use App\Models\Orders;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentsController extends Controller
 {
@@ -31,15 +33,15 @@ class PaymentsController extends Controller
             $payments = $query->get();
         } else if ($user->role === 'customer') {
             $customerId = Customers::where('customers.user_id', $user->id)->first();
-            
-            // ✅ Validasi: cek apakah customer ditemukan
+
+            //  Validasi: cek apakah customer ditemukan
             if (!$customerId) {
                 return new BaseResource(false, 'Data customer tidak ditemukan', null, 404);
             }
 
             $payments = $query->join('orders', 'orders.id', '=', 'payments.order_id')
                 ->where('orders.customer_id', $customerId)->get();
-                
+
             if ($payments->isEmpty()) {
                 return new BaseResource(false, 'Data tidak ditemukan', null, 404);
             }
@@ -159,5 +161,143 @@ class PaymentsController extends Controller
         $payments->delete();
 
         return new BaseResource(true, 'Data Payments Berhasil dihapus', $payments, 200);
+    }
+
+    /**
+     * Upload bukti pembayaran untuk order tertentu (Customer).
+     */
+    public function uploadProof(Request $request, string $orderId)
+    {
+        $order = Orders::find($orderId);
+        if (!$order) {
+            return new BaseResource(false, 'Order tidak ditemukan', null, 404);
+        }
+
+        $customer = Customers::where('user_id', Auth::id())->first();
+        if (!$customer || $order->customer_id != $customer->id) {
+            return new BaseResource(false, 'Akses ditolak', null, 403);
+        }
+        
+        if ($order->status !== 'dibayar') {
+            return new BaseResource(false, 'Hanya bisa upload saat status "dibayar"', null, 400);
+        }
+
+        $payment = Payments::where('order_id', $orderId)->first();
+        if (!$payment) {
+            return new BaseResource(false, 'Data Pembayaran tidak ditemukan', null, 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'proof_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        if ($validator->fails()) {
+            return new BaseResource(false, 'Validasi file gagal: ' . $validator->errors()->first('proof_image'), null, 422);
+        }
+
+        try {
+            $file = $request->file('proof_image');
+            
+            if ($payment->proof_of_payment) {
+                Storage::disk('public')->delete($payment->proof_of_payment);
+            }
+
+            $fileName = $orderId . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('payment_proofs', $fileName, 'public');
+            
+            $payment->proof_of_payment = $path;
+            $payment->tanggal_bayar = now();
+            $payment->save();
+
+            $proofUrl = config('app.url') . '/storage/' . $path;
+
+            return new BaseResource(true, 'Bukti pembayaran berhasil diupload', [
+                'proof_path' => $path,
+                'proof_url' => $proofUrl,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return new BaseResource(false, 'Gagal upload: ' . $e->getMessage(), null, 500);
+        }
+    }
+
+    /**
+     * Ambil detail payment dengan bukti pembayaran (Admin).
+     */
+    public function showPaymentDetail(string $orderId)
+    {
+        if (Auth::user()->role !== 'admin') {
+            return new BaseResource(false, 'Akses ditolak', null, 403);
+        }
+
+        $payment = Payments::where('order_id', $orderId)
+            ->select('payments.*', 'payment_methods.metode')
+            ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+            ->first();
+
+        if (!$payment) {
+            return new BaseResource(false, 'Data Pembayaran tidak ditemukan', null, 404);
+        }
+
+        $proofUrl = null;
+        if ($payment->proof_of_payment) {
+            $proofUrl = config('app.url') . '/storage/' . $payment->proof_of_payment;
+        }
+        
+        $responseData = [
+            'id' => $payment->id,
+            'order_id' => $payment->order_id,
+            'metode' => $payment->metode,
+            'jumlah_bayar' => $payment->jumlah_bayar,
+            'tanggal_bayar' => $payment->tanggal_bayar,
+            'status' => $payment->status,
+            'validation_note' => $payment->validation_note,
+            'proof_path' => $payment->proof_of_payment,
+            'proof_url' => $proofUrl,
+        ];
+
+        return new BaseResource(true, 'Detail Pembayaran', $responseData, 200);
+    }
+
+    /**
+     * Ambil detail payment dengan bukti pembayaran (Customer). 
+     */
+    public function showCustomerPaymentDetail(string $orderId)
+    {
+        $user = Auth::user();
+        $customer = Customers::where('user_id', $user->id)->first();
+
+        $order = Orders::find($orderId);
+        if (!$order || $order->customer_id != $customer->id) {
+            return new BaseResource(false, 'Akses ditolak atau Order tidak ditemukan', null, 403);
+        }
+
+        $payment = Payments::where('order_id', $orderId)
+            ->select('payments.*', 'payment_methods.metode')
+            ->join('payment_methods', 'payment_methods.id', '=', 'payments.payment_method_id')
+            ->first();
+
+        if (!$payment) {
+            return new BaseResource(false, 'Data Pembayaran tidak ditemukan', null, 404);
+        }
+
+        $proofUrl = null;
+        if ($payment->proof_of_payment) {
+            $proofUrl = config('app.url') . '/storage/' . $payment->proof_of_payment;
+        }
+        
+        $responseData = [
+            'id' => $payment->id,
+            'order_id' => $payment->order_id,
+            'metode' => $payment->metode,
+            'jumlah_bayar' => $payment->jumlah_bayar,
+            'tanggal_bayar' => $payment->tanggal_bayar,
+            'status' => $payment->status,
+            'validation_note' => $payment->validation_note,
+            'proof_path' => $payment->proof_of_payment,
+            'proof_url' => $proofUrl,
+        ];
+        
+        return new BaseResource(true, 'Detail Pembayaran', $responseData, 200);
     }
 }

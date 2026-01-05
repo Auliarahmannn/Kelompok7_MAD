@@ -9,6 +9,7 @@ class MyOrderItemModel {
   final double harga;
   final String foto; 
   final String status;
+  final String? proofOfPayment;
 
   MyOrderItemModel({
     required this.orderItemId,
@@ -19,6 +20,7 @@ class MyOrderItemModel {
     required this.harga,
     required this.foto,
     required this.status,
+    this.proofOfPayment,
   });
 
   factory MyOrderItemModel.fromJson(Map<String, dynamic> json) {
@@ -31,6 +33,7 @@ class MyOrderItemModel {
       harga: double.tryParse(json['harga'].toString()) ?? 0.0,
       foto: json['foto'] ?? '',
       status: json['status'] ?? 'pending',
+      proofOfPayment: json['proof_of_payment'],
     );
   }
 

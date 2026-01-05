@@ -4,6 +4,8 @@ import '/models/my_order_item_model.dart';
 import '/services/order_service.dart';
 import '/services/cart_service.dart';
 import '/pages/cart/cart_page.dart';
+import '/models/payment_method_model.dart';
+import '/pages/payment/payment_detail_page.dart';
 
 class HistoryPage extends StatefulWidget {
   final String? initialStatus;
@@ -15,33 +17,54 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  final List<String> _tabs = ['selesai', 'dibayar', 'dikirim', 'batal'];
+  final List<String> _tabs = ['belum_bayar', 'menunggu_konfirmasi', 'dikirim', 'selesai', 'batal']; 
+  
   final Map<String, String> _tabDisplay = {
-    'selesai': 'Selesai',
-    'dibayar': 'Dibayar',
+    'belum_bayar': 'Belum Bayar', // Order status 'dibayar' DAN BELUM upload bukti
+    'menunggu_konfirmasi': 'Diproses', // Order status 'dibayar' DAN SUDAH upload bukti
     'dikirim': 'Dikirim',
+    'selesai': 'Selesai',
     'batal': 'Dibatalkan',
   };
 
-  String _selectedStatus = 'selesai'; // Status tab pertama
+  // Default ke 'belum_bayar'
+  String _selectedStatus = 'belum_bayar'; 
 
   bool _isLoading = true;
   String _error = '';
-  List<MyOrderItemModel> _allMyItems = [];
+  List<MyOrderItemModel> _allMyItems = []; // Semua order non-'pending'
   List<MyOrderItemModel> _filteredItems = [];
 
   @override
   void initState() {
     super.initState();
-    _selectedStatus = widget.initialStatus ?? 'selesai';
+    // Jika initialStatus adalah 'dibayar', petakan ke status logika yang baru
+    if (widget.initialStatus == 'dibayar') {
+      _selectedStatus = 'menunggu_konfirmasi'; 
+    } else {
+      _selectedStatus = widget.initialStatus ?? 'belum_bayar';
+    }
     _fetchMyOrders();
   }
 
   void _filterItems() {
     setState(() {
-      _filteredItems = _allMyItems
-          .where((item) => item.status == _selectedStatus)
-          .toList();
+      _filteredItems = _allMyItems.where((item) {
+        final bool hasProof = item.proofOfPayment?.isNotEmpty == true;
+
+        if (_selectedStatus == 'belum_bayar') {
+          // KONDISI 1: Belum Bayar/Belum Upload (Ingin Dihilangkan Setelah Upload)
+          // Order statusnya harus 'dibayar' DAN BELUM ada bukti
+          return item.status == 'dibayar' && !hasProof;
+        } else if (_selectedStatus == 'menunggu_konfirmasi') {
+          // KONDISI 2: Menunggu Konfirmasi (Order akan Pindah ke Sini Setelah Upload)
+          // Order statusnya harus 'dibayar' DAN SUDAH ada bukti
+          return item.status == 'dibayar' && hasProof;
+        } else {
+          // KONDISI 3: Status lain (dikirim, selesai, batal)
+          return item.status == _selectedStatus;
+        }
+      }).toList();
     });
   }
 
@@ -49,14 +72,13 @@ class _HistoryPageState extends State<HistoryPage> {
     try {
       final items = await OrderService.getMyOrderItems();
       setState(() {
-        _allMyItems = items;
-        _filterItems(); // Langsung filter untuk tab pertama
+        _allMyItems = items.where((item) => item.status != 'pending').toList();
+        _filterItems(); 
       });
     } catch (e) {
       setState(() {
         _error = e.toString();
       });
-      // Tampilkan SnackBar jika ada error
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -79,13 +101,62 @@ class _HistoryPageState extends State<HistoryPage> {
     super.dispose();
   }
 
+  void _confirmCancelOrder(MyOrderItemModel item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Batalkan Pesanan?'),
+        content: Text('Anda yakin ingin membatalkan pesanan #${item.orderId} ini? Tindakan ini akan mengembalikan stok produk.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false), // Kembali false
+            child: const Text('Tidak', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true), // Kembali true
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Ya, Batalkan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Membatalkan pesanan...'), duration: Duration(seconds: 1)),
+      );
+
+      try {
+        final success = await OrderService.cancelOrder(item.orderId);
+        
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar(); 
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pesanan berhasil dibatalkan.'), backgroundColor: Colors.green),
+          );
+          _fetchMyOrders(); // Refresh list
+        } else {
+          throw Exception('Gagal membatalkan di server.');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar(); 
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Pembatalan gagal: ${e.toString().replaceAll('Exception: ', '')}'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       body: Stack(
         children: [
-          // Background image (biarkan sama)
+          // Background image 
           Positioned(
             top: 0,
             left: 0,
@@ -119,7 +190,7 @@ class _HistoryPageState extends State<HistoryPage> {
           SafeArea(
             child: Column(
               children: [
-                // App Bar (biarkan sama)
+                // App Bar 
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -286,6 +357,11 @@ class _HistoryPageState extends State<HistoryPage> {
     final String jumlah = 'Jumlah : ${item.jumlahProduk}';
     final String hargaSatuan = 'Harga : ${item.formattedPrice}';
     final int totalPrice = (item.harga * item.jumlahProduk).toInt();
+    
+    // Status visual tergantung apakah bukti sudah diupload atau belum
+    bool hasProof = item.proofOfPayment?.isNotEmpty == true;
+    
+    String currentLogicStatus = _selectedStatus; 
 
     return Container(
       decoration: BoxDecoration(
@@ -380,6 +456,89 @@ class _HistoryPageState extends State<HistoryPage> {
               ],
             ),
           ),
+          
+          // --- Aksi untuk status yang sedang aktif (belum_bayar & menunggu_konfirmasi) ---
+          if (currentLogicStatus == 'belum_bayar' || currentLogicStatus == 'menunggu_konfirmasi')
+             Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tampilkan status menunggu/belum upload
+                  Text(
+                    currentLogicStatus == 'menunggu_konfirmasi'
+                      ? 'Bukti telah diupload. Menunggu verifikasi Admin.'
+                      : 'Segera lakukan pembayaran dan upload bukti.',
+                    style: TextStyle(
+                      color: currentLogicStatus == 'menunggu_konfirmasi' ? Colors.blue[600] : Colors.red[600],
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // 1. Batalkan Pesanan (Outlined/Destructive)
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _confirmCancelOrder(item), 
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.red[400]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          child: Text(
+                            'Batalkan Pesanan',
+                            style: TextStyle(
+                              color: Colors.red[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // 2. Bayar Sekarang/Lihat Bukti (Elevated) -> ke detail payment
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Navigasi ke halaman detail pembayaran 
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(
+                                builder: (context) => PaymentDetailPage(
+                                  orderId: item.orderId,
+                                  totalPrice: totalPrice, 
+                                  itemsToCheckout: const [], 
+                                  selectedPaymentMethod: PaymentMethodModel(id: 1, metode: "Transfer Bank"), 
+                                ),
+                              ),
+                            ).then((_) => _fetchMyOrders()); // Refresh setelah kembali
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF5D7F5F),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            elevation: 0,
+                          ),
+                          child: Text(
+                            currentLogicStatus == 'menunggu_konfirmasi' ? 'Lihat Bukti' : 'Bayar Sekarang',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          
           if (item.status == 'selesai')
             Padding(
               padding: const EdgeInsets.all(12),
@@ -473,7 +632,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  // _showRatingDialog (Biarkan sama)
+  // _showRatingDialog 
   void _showRatingDialog(BuildContext context, String productName) {
     int selectedRating = 0;
     TextEditingController reviewController = TextEditingController();

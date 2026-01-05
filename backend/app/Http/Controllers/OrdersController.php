@@ -6,6 +6,7 @@ use App\Http\Resources\BaseResource;
 use App\Models\Customers;
 use Illuminate\Http\Request;
 use App\Models\Orders;
+use App\Models\Products;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -181,20 +182,36 @@ class OrdersController extends Controller
         // 2. Validasi input
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:pending,dibayar,dikirim,selesai,batal',
+            'validation_note' => 'nullable|string|max:255', // TAMBAH
         ]);
-
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // 3. Cari dan update order
         $order = Orders::find($id);
-        if (!$order) {
-            return new BaseResource(false, 'Data order tidak ditemukan', null, 404);
+        // ... (check !$order)
+        
+        $payment = $order->payment;
+        $newStatus = $request->status;
+        $validationNote = $request->validation_note;
+        
+        // Cek bukti bayar jika status mau diubah ke 'dikirim' atau 'batal'
+        if (($newStatus === 'dikirim' || $newStatus === 'batal') && (!$payment || !$payment->proof_of_payment)) {
+             return new BaseResource(false, 'Bukti pembayaran harus diupload sebelum status diubah ke dikirim atau batal', null, 400);
         }
-
-        $order->status = $request->status;
+        
+        // Update Order Status
+        $order->status = $newStatus;
         $order->save();
+        
+        // Update Payments table jika ada catatan atau status dibatalkan
+        if ($payment) {
+            if ($newStatus === 'batal') {
+                $payment->status = 'gagal'; // Tanda pembayaran gagal dikonfirmasi
+            }
+            $payment->validation_note = $validationNote;
+            $payment->save();
+        }
 
         return new BaseResource(true, 'Status order berhasil diupdate', $order, 200);
     }
@@ -236,6 +253,59 @@ class OrdersController extends Controller
         $order->save();
 
         return new BaseResource(true, 'Status order berhasil diupdate ke "Selesai"', $order, 200);
+    }
+
+    /**
+     * Batalkan pesanan oleh customer (hanya status 'dibayar').
+     */
+    public function cancelOrder(string $id)
+    {
+        $user = Auth::user();
+        if ($user->role !== 'customer') {
+            return new BaseResource(false, 'Hanya customer yang dapat melakukan ini', null, 403);
+        }
+
+        $customersId = Customers::where('customers.user_id', $user->id)->value('id');
+        $order = Orders::find($id);
+
+        if (!$order || $order->customer_id !== $customersId) {
+            return new BaseResource(false, 'Order tidak ditemukan atau akses ditolak', null, 404);
+        }
+
+        // Hanya boleh dibatalkan jika statusnya 'dibayar' (Menunggu Bayar)
+        if ($order->status !== 'dibayar') {
+            return new BaseResource(false, 'Pesanan hanya dapat dibatalkan saat status "Menunggu Bayar"', null, 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            // 1. Update status order menjadi 'batal'
+            $order->status = 'batal';
+            $order->save();
+
+            // 2. Kembalikan stok produk
+            foreach ($order->orderItems as $item) {
+                $product = Products::find($item->product_id);
+                if ($product) {
+                    $product->stok += $item->jumlah_produk;
+                    $product->save();
+                }
+            }
+            
+            // 3. Update status pembayaran menjadi 'gagal' atau 'dibatalkan'
+            $payment = $order->payment;
+            if ($payment) {
+                $payment->status = 'gagal'; 
+                $payment->save();
+            }
+
+            DB::commit();
+            return new BaseResource(true, 'Pesanan berhasil dibatalkan dan stok dikembalikan', null, 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return new BaseResource(false, 'Pembatalan gagal: ' . $e->getMessage(), null, 500);
+        }
     }
 
     /**
