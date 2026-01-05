@@ -13,6 +13,8 @@ class Payments extends Model
         'jumlah_bayar',
         'tanggal_bayar',
         'status',
+        'proof_of_payment', 
+        'validation_note',
     ];
 
     public $timestamps = false;

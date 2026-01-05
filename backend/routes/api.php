@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum', 'peran:admin'])->group(function () {
     // Payments
     Route::put('/payments/{id}', [PaymentsController::class, 'update']);
     Route::delete('/payments/{id}', [PaymentsController::class, 'destroy']);
+    Route::get('/admin/payments/{orderId}', [PaymentsController::class, 'showPaymentDetail']);
 
     // Payment Methods
     Route::post('/payment_method', [PaymentMethodController::class, 'store']);
@@ -64,12 +65,15 @@ Route::middleware(['auth:sanctum', 'peran:customer'])->group(function () {
 
     // My Orders 
     Route::patch('/my-orders/{order}/receive', [OrdersController::class, 'receiveOrder']);
+    Route::delete('/my-orders/{orderId}/cancel', [OrdersController::class, 'cancelOrder']);
 
     // Order Items
     Route::post('/order-items', [OrderItemsController::class, 'store']);
 
     // Payments
     Route::post('/payments', [PaymentsController::class, 'store']);
+    Route::post('/payments/{orderId}/proof', [PaymentsController::class, 'uploadProof']);
+    Route::get('/payments/order/{orderId}', [PaymentsController::class, 'showCustomerPaymentDetail']);
 
     // Customers (update profil sendiri)
     Route::put('/customers/{id}', [CustomersController::class, 'update']);

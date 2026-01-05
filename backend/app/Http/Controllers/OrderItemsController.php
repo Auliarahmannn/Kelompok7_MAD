@@ -18,21 +18,29 @@ class OrderItemsController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $query = OrderItems::select(
+        
+        // Perbaikan: Gunakan with('order.payment') untuk Eager Loading
+        $query = OrderItems::with([
+            'order.payment:order_id,proof_of_payment', 
+            'product:id,nama_produk,foto'
+        ])->select(
             'order_items.id',
             'order_items.order_id',
             'order_items.product_id',
-            'products.nama_produk',
             'order_items.jumlah_produk',
             'order_items.harga',
-            'products.foto',     
-            'orders.status'
-        )
-        ->join('products', 'products.id', '=', 'order_items.product_id')
-        ->join('orders', 'orders.id', '=', 'order_items.order_id');
-
+        );
+        
         if ($user->role === 'admin') {
-            $items = $query->get();
+             $items = $query->get()->map(function ($item) {
+                 // Map status dan proof_of_payment dari relasi
+                 $item->status = $item->order->status;
+                 $item->nama_produk = $item->product->nama_produk;
+                 $item->foto = $item->product->foto;
+                 $item->proof_of_payment = $item->order->payment?->proof_of_payment; // Ambil bukti
+                 unset($item->order, $item->product);
+                 return $item;
+             });
         } else if ($user->role === 'customer') {
             $customersId = Customers::where('customers.user_id', $user->id)->value('id');
 
@@ -40,10 +48,22 @@ class OrderItemsController extends Controller
                 return new BaseResource(false, 'Data customer tidak ditemukan', null, 404);
             }
             
-            // hanya order_items yang ada di order miliknya
+            // Filter hanya order milik customer
             $items = $query
-                ->where('orders.customer_id', $customersId)
-                ->get();
+                ->whereHas('order', function ($q) use ($customersId) {
+                    $q->where('customer_id', $customersId);
+                })
+                ->get()
+                ->map(function ($item) {
+                    // Map status dan proof_of_payment dari relasi
+                    $item->status = $item->order->status;
+                    $item->nama_produk = $item->product->nama_produk;
+                    $item->foto = $item->product->foto;
+                    // 🔥 Ambil proof_of_payment dari relasi payment
+                    $item->proof_of_payment = $item->order->payment?->proof_of_payment; 
+                    unset($item->order, $item->product);
+                    return $item;
+                });
                 
             if ($items->isEmpty()) {
                 return new BaseResource(false, 'Data tidak ditemukan', null, 404);

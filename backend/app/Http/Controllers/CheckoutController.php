@@ -11,7 +11,7 @@ use App\Models\OrderItems;
 use App\Models\Products;
 use App\Models\Customers;
 use App\Models\Payments;
-use App\Models\PaymentMethod; // Pastikan nama model Anda 'PaymentMethod'
+use App\Models\PaymentMethod; 
 use App\Http\Resources\BaseResource;
 
 class CheckoutController extends Controller
@@ -93,12 +93,12 @@ class CheckoutController extends Controller
                 $totalHarga += ($item->harga * $item->jumlah_produk);
             }
 
-            // 2. Buat Order baru dengan status 'dibayar' (atau 'menunggu pembayaran')
+            // 2. Buat Order baru dengan status 'dibayar' (Menunggu Bukti)
             $newOrder = Orders::create([
                 'customer_id' => $customer->id,
                 'tanggal_pesan' => now(),
                 'total_harga' => $totalHarga,
-                'status' => 'dibayar' // Ganti jadi 'menunggu' jika perlu konfirmasi
+                'status' => 'dibayar' // Status ini berarti "Menunggu Pembayaran/Bukti"
             ]);
 
             // 3. Pindahkan OrderItems dari order 'pending' ke order baru
@@ -118,8 +118,7 @@ class CheckoutController extends Controller
                 'order_id' => $newOrder->id,
                 'payment_method_id' => $request->payment_method_id,
                 'jumlah_bayar' => $totalHarga,
-                'tanggal_bayar' => now(),
-                'status' => 'berhasil' // Ganti 'menunggu' jika perlu konfirmasi
+                'status' => 'menunggu', // Status Pembayaran adalah 'menunggu' sampai bukti di-upload
             ]);
 
             // 6. Hitung ulang total keranjang (pending order) yang lama

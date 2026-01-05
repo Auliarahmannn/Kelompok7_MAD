@@ -8,6 +8,7 @@ import '/services/user_service.dart';
 import '/services/payment_method_service.dart';
 import '/widgets/custom_button.dart';
 import 'payment_detail_page.dart';
+import '../../services/order_service.dart';
 import '../../pages/profile/profile_update.dart';
 
 // --- Model untuk Opsi Pengiriman ---
@@ -74,6 +75,9 @@ class _PaymentPageState extends State<PaymentPage> {
   late Future<UserModel> _userFuture;
   int? _selectedPaymentMethodId;
   PaymentMethodModel? _selectedPaymentMethod;
+  
+  // State untuk tombol checkout/loading
+  bool _isProcessingCheckout = false; 
 
   // --- State Baru ---
   bool _useProtection = true;
@@ -118,6 +122,76 @@ class _PaymentPageState extends State<PaymentPage> {
       symbol: 'Rp',
       decimalDigits: 0,
     ).format(price).replaceAll(',', '.');
+  }
+
+  Future<void> _handleCheckout() async {
+    if (_selectedPaymentMethodId == null || _selectedPaymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Silakan pilih metode pembayaran dahulu.')),
+      );
+      return;
+    }
+
+    int finalTotal = widget.totalPrice;
+    if (_useProtection) {
+      finalTotal += protectionFee;
+    }
+    finalTotal += _selectedShipping.price;
+    
+    setState(() => _isProcessingCheckout = true);
+
+    try {
+      // 1. Panggil Service Checkout
+      final result = await OrderService.checkout(
+        items: widget.itemsToCheckout,
+        paymentMethodId: _selectedPaymentMethod!.id,
+      );
+
+      if (!mounted) return;
+
+      if (result['status'] == true) {
+        // 2. Ambil Order ID dari respons
+        final int newOrderId = result['data']['order_id'];
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Checkout berhasil, lanjutkan ke detail pembayaran.'),
+            backgroundColor: Color(0xFF5D7F5F),
+          ),
+        );
+        
+        // 3. Navigasi ke PaymentDetailPage dengan orderId
+        Navigator.pushReplacement( 
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentDetailPage(
+              totalPrice: finalTotal, 
+              itemsToCheckout: widget.itemsToCheckout,
+              selectedPaymentMethod: _selectedPaymentMethod!,
+              orderId: newOrderId, // Meneruskan orderId yang baru dibuat
+            ),
+          ),
+        );
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Checkout gagal.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error Checkout: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isProcessingCheckout = false);
+    }
   }
 
   // --- Fungsi Baru: Edit Alamat ---
@@ -578,8 +652,7 @@ class _PaymentPageState extends State<PaymentPage> {
                                       return Center(child: CircularProgressIndicator());
                                     }
                                     if (snapshot.hasError) {
-                                      print(snapshot.error); 
-                                      return Center(child: Text('Gagal memuat metode. Cek koneksi & API.'));
+                                      return const Center(child: Text('Gagal memuat metode. Cek koneksi & API.'));
                                     }
                                     if (!snapshot.hasData || snapshot.data!.isEmpty) {
                                       return Center(child: Text('Metode pembayaran tidak tersedia.'));
@@ -588,8 +661,13 @@ class _PaymentPageState extends State<PaymentPage> {
                                     final methods = snapshot.data!;
                                     
                                     if (_selectedPaymentMethodId == null && methods.isNotEmpty) {
-                                      _selectedPaymentMethodId = methods.first.id;
-                                      _selectedPaymentMethod = methods.first;
+                                      // Set default jika belum ada yang terpilih
+                                      Future.microtask(() {
+                                        setState(() {
+                                          _selectedPaymentMethodId = methods.first.id;
+                                          _selectedPaymentMethod = methods.first;
+                                        });
+                                      });
                                     }
 
                                     return Column(
@@ -661,32 +739,9 @@ class _PaymentPageState extends State<PaymentPage> {
                       ),
                       const Spacer(),
                       CustomButton(
-                        text: 'Check out',
-                        onPressed: () {
-                          if (_selectedPaymentMethodId == null ||
-                              _selectedPaymentMethod == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Silakan pilih metode pembayaran dahulu.')),
-                            );
-                            return;
-                          }
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PaymentDetailPage(
-                                // Kirim total harga yang sudah final
-                                totalPrice: finalTotal, 
-                                itemsToCheckout: widget.itemsToCheckout,
-                                selectedPaymentMethod: _selectedPaymentMethod!,
-                                // TODO: Kirim juga _sellerNote dan _selectedShipping
-                                // jika PaymentDetailPage membutuhkannya
-                              ),
-                            ),
-                          );
-                        },
+                        // Ganti teks dan status loading
+                        text: _isProcessingCheckout ? 'Memproses...' : 'Check out',
+                        onPressed: _isProcessingCheckout ? null : _handleCheckout,
                         width: 140,
                         height: 48,
                       ),
